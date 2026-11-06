@@ -1,0 +1,85 @@
+{
+  "name": "MOD Dwarf",
+  "architecture": "aarch64",
+  "platform": "dwarf",
+  "bin-compat": "aarch64-a35",
+  "gpio_platform": "",
+  "codec_truebypass": false,
+  "factory_pedalboards": true,
+  "has_noisegate": true,
+  "swapped_audio_channels": true,
+  "tuner_input_save": true,
+  "tuner_resolution": 100,
+  "hmi_actuator_group_prefix": false,
+  "hmi_bank_navigation": false,
+  "hmi_eeprom": true,
+  "hmi_set_index": false,
+  "hmi_set_master_vol": false,
+  "hmi_set_pb_name": true,
+  "hmi_set_ss_name": true,
+  "hmi_set_tuner_input": true,
+  "hmi_set_tuner_ref_freq": true,
+  "hmi_show_empty_pages": true,
+  "hmi_subpages": true,
+  "addressing_pages": 8,
+  "actuators": [
+    {
+      "uri"  : "/hmi/knob1",
+      "name" : "Knob 1",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "subpages": ["Endless Knobs - Subpage I","Endless Knobs - Subpage II","Endless Knobs - Subpage III"],
+      "widgets": ["label","unit","value","indicator"],
+      "id": 0
+    },{
+      "uri"  : "/hmi/knob2",
+      "name" : "Knob 2",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "subpages": ["Endless Knobs - Subpage I","Endless Knobs - Subpage II","Endless Knobs - Subpage III"],
+      "widgets": ["label","unit","value","indicator"],
+      "id": 1
+    },{
+      "uri"  : "/hmi/knob3",
+      "name" : "Knob 3",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "subpages": ["Endless Knobs - Subpage I","Endless Knobs - Subpage II","Endless Knobs - Subpage III"],
+      "widgets": ["label","unit","value","indicator"],
+      "id": 2
+    },{
+      "uri"  : "/hmi/footswitch1",
+      "name" : "Footswitch B",
+      "group": "Footswitches",
+      "gname": "B",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:colouredlist:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "widgets": ["led","label"],
+      "id": 3
+    },{
+      "uri"  : "/hmi/footswitch2",
+      "name" : "Footswitch C",
+      "group": "Footswitches",
+      "gname": "C",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:colouredlist:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "widgets": ["led","label"],
+      "id": 4
+    },{
+      "uri"  : "/hmi/group1",
+      "name" : "Footswitch B&C",
+      "group": "Footswitch Groups",
+      "gname": "B&C",
+      "modes": ":enumeration:colouredlist:",
+      "steps": [],
+      "max_assigns": 1,
+      "actuator_group": ["/hmi/footswitch1", "/hmi/footswitch2"],
+      "id": 5
+    }
+  ]
+}
