@@ -122,24 +122,42 @@ static int is_current(const emu_thread *t)
     return thread_of(pxCurrentTCB) == t;
 }
 
-/* a task switched away by the watchdog keeps running until its next preemption point: it parks there */
-static void check_preempted(void)
+/*
+ * Takes the irq lock as the current task.
+ *
+ * A task switched away by the watchdog keeps running until it enters the kernel, then parks. The check has to
+ * be made holding the lock: the watchdog switches only holding it, so once the lock is ours and we are current
+ * we stay current until we release it. Checked before taking the lock, a switch could slip in between and the
+ * task would go on in the kernel as if it were current (placing the new current task on an event list, say),
+ * which corrupts the task lists.
+ *
+ * Returns with the lock held once more by this thread.
+ */
+static _Thread_local int t_barrier;     /* inside vTaskSuspendAll(), between its two barriers */
+
+static void lock_as_current(void)
 {
+    emu_irq_lock();
+
     emu_thread *self = t_self;
-    if (! self || ! atomic_load(&self->preempted))
+    /* outside tasks, or the lock was already ours: nobody could switch this task meanwhile */
+    if (! self || emu_in_isr() || t_critical > 0 || t_irq_disabled || t_barrier)
         return;
 
-    atomic_store(&self->preempted, 0);
-    if (! is_current(self))
+    while (atomic_exchange(&self->preempted, 0))
     {
+        if (is_current(self))
+        {
+            /* scheduled again before it got here: drop the wake-up it was given meanwhile */
+            pthread_mutex_lock(&self->mutex);
+            self->run = 0;
+            pthread_mutex_unlock(&self->mutex);
+            break;
+        }
+
+        emu_irq_unlock();
         thread_wait(self);
-    }
-    else
-    {
-        /* scheduled again before it got here: drop the wake-up it was given meanwhile */
-        pthread_mutex_lock(&self->mutex);
-        self->run = 0;
-        pthread_mutex_unlock(&self->mutex);
+        emu_irq_lock();
     }
 }
 
@@ -220,8 +238,6 @@ static void yield(int idle)
         return;
     }
 
-    check_preempted();
-
     /* taskYIELD() loops (the display task, the post boot task) would spin a host core: a task gets one
      * explicit yield per g_idle_yield_us, it waits for the rest unless a context switch is requested */
     if (idle && g_idle_yield_us)
@@ -232,7 +248,8 @@ static void yield(int idle)
         t_last_yield = emu_now_us();
     }
 
-    emu_irq_lock();
+    /* switch_context() switches away from the current task: it must be this one */
+    lock_as_current();
     switch_context();
 }
 
@@ -263,10 +280,15 @@ void emu_preemption_point(void)
     if (atomic_load(&g_halted) && t_self && ! emu_in_isr())
         park_forever();
 
-    if (! t_self || emu_in_isr() || t_critical != 0 || t_irq_disabled)
+    if (! t_self || emu_in_isr() || t_critical != 0 || t_irq_disabled || t_barrier)
         return;
 
-    check_preempted();
+    /* switched away by the watchdog: park here */
+    if (atomic_load(&t_self->preempted))
+    {
+        lock_as_current();
+        emu_irq_unlock();
+    }
 
     if (atomic_load(&g_switch_requested))
         yield(0);
@@ -280,9 +302,7 @@ void vPortDisableInterrupts(void)
 {
     if (t_irq_disabled)
         return;
-    if (t_critical == 0 && ! emu_in_isr())
-        check_preempted();
-    emu_irq_lock();
+    lock_as_current();
     t_irq_disabled = 1;
 }
 
@@ -300,17 +320,28 @@ void vPortEnableInterrupts(void)
     }
 }
 
+/*
+ * vTaskSuspendAll() is "barrier; ++uxSchedulerSuspended; barrier". The lock is held across the increment, so the
+ * watchdog sees the scheduler either still running (and switches before this task got here: it parks) or
+ * suspended (and does not switch).
+ */
 void vPortSoftwareBarrier(void)
 {
-    if (t_self && t_critical == 0 && ! t_irq_disabled && ! emu_in_isr())
-        check_preempted();
+    lock_as_current();
+    ++t_barrier;
+}
+
+void vPortMemoryBarrier(void)
+{
+    if (t_barrier == 0)
+        return;
+    --t_barrier;
+    emu_irq_unlock();
 }
 
 void vPortEnterCritical(void)
 {
-    if (t_critical == 0 && ! t_irq_disabled && ! emu_in_isr())
-        check_preempted();
-    emu_irq_lock();
+    lock_as_current();
     ++t_critical;
 }
 
@@ -329,9 +360,10 @@ void vPortExitCritical(void)
     }
 }
 
+/* the FromISR calls, also made from tasks (a serial callback, say) */
 UBaseType_t uxPortSetInterruptMaskFromISR(void)
 {
-    emu_irq_lock();
+    lock_as_current();
     return 0;
 }
 

@@ -65,7 +65,9 @@ void vPortClearInterruptMaskFromISR(UBaseType_t mask);
 /* vTaskSuspendAll() starts with it: a task switched away by the watchdog parks before it suspends the
  * scheduler, or it would hold the scheduler while parked */
 void vPortSoftwareBarrier(void);
+void vPortMemoryBarrier(void);
 #define portSOFTWARE_BARRIER()                   vPortSoftwareBarrier()
+#define portMEMORY_BARRIER()                     vPortMemoryBarrier()
 
 /* task deletion: the host thread of the task has to go too */
 void vPortTaskDeleting(void *tcb);
