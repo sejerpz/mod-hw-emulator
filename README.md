@@ -106,6 +106,17 @@ push them, Z X C are the footswitches A B C, F1-F3 the subpage buttons I II III,
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
 | `patches/` | the mod-ui change the emulator needs (also on mod-ui branch `feature/mod-hw-emulator`) |
 
+## License
+
+mod-hw-emulator is licensed under AGPLv3+, see [LICENSE](LICENSE).
+
+What it is built with:
+
+- the MOD Dwarf controller firmware (AGPLv3+), into the firmware module;
+- the FreeRTOS kernel that comes with the firmware (MIT); the host port in `lpc177x/` is part of this project;
+- `sys_host.c` of mod-system-control (AGPLv3+), into the runner and the user interface;
+- Qt5 (LGPLv3), dynamically linked by the user interface.
+
 ## Use of AI
 
 Parts of this project, code and documentation, may be written with the help of AI tools,
