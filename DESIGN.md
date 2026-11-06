@@ -169,10 +169,13 @@ pot values; their LPC/ADC and display controller models are added when their fir
 - **Busy waits.** `sys_comm_wait_response()` spins on a flag set by another task. On the MCU an interrupt
   preempts the spinning task; here the port forces a pending switch after 2 ms (`emu_port_watchdog`), and
   the old thread parks at its next preemption point, `vTaskSuspendAll()` included (`portSOFTWARE_BARRIER`).
-- **NULL reads** go unnoticed on the LPC1778, where address 0 is readable flash, and crash on a PC. Two
-  latent firmware bugs found this way, fixed on the firmware branch `feature/mod-hw-emulator`:
-  `CM_set_foot_led(NULL)` after `pcl`, and `cb_menu_item_changed()` reading past the arguments of `c`.
-  The emulator reports any invalid access in the firmware with its module offset (for `addr2line`).
+- **NULL reads and double frees** go unnoticed on the LPC1778, where address 0 is readable flash and the
+  FreeRTOS heap does not check frees, and crash on a PC. Latent firmware bugs found this way, fixed on the
+  firmware branch `feature/mod-hw-emulator`: `CM_set_foot_led(NULL)` after `pcl`, `cb_menu_item_changed()`
+  reading past the arguments of `c`, `data_free_banks_list()` freeing the flags twice (bank list in the
+  navigation mode), and `foot_control_rm()` reading an empty footswitch (a pedalboard loaded from the
+  navigation mode). The emulator reports any invalid access in the firmware with its module offset (for
+  `addr2line`).
 - **Integer division by zero** returns 0 on the Cortex-M3 and traps on x86-64. The emulator completes the
   instruction the ARM way and logs it once: `screen_page_index()` divides by the number of available pages,
   0 when `boot` arrives before `pa` — a latent firmware bug.
