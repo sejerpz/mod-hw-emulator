@@ -20,6 +20,8 @@
 
 enum { BOOTING, WAIT_LOGIN, WAIT_PASSWORD, SHELL };
 
+#define MAX_OUT 32
+
 struct mhe_console {
     mhe_console_reply reply;
     void *ctx;
@@ -29,6 +31,12 @@ struct mhe_console {
     size_t line_len;
     pthread_t boot_thread;
     int boot_started;
+
+    /* what the console prints, delivered by the output thread */
+    pthread_t out_thread;
+    pthread_cond_t out_cond;
+    char out[MAX_OUT][MAX_LINE + 64];
+    int out_head, out_count;
 };
 
 /* command prefix -> output line */
@@ -37,9 +45,44 @@ static const struct { const char *prefix; const char *output; } g_answers[] = {
     { "systemctl is-enabled", "enabled" },
 };
 
+/*
+ * Output goes out a little after the input that caused it, as on a real line: the controller sends a command
+ * and only then moves its state on (to wait for the shell prompt after the password, say). An answer sent
+ * back while it is still sending would be read in the previous state and dropped. Mutex held.
+ */
+#define ANSWER_DELAY_MS 20
+
 static void say(mhe_console *c, const char *text)
 {
-    c->reply(c->ctx, (const uint8_t *)text, strlen(text));
+    if (c->out_count == MAX_OUT)
+        return;
+    snprintf(c->out[(c->out_head + c->out_count) % MAX_OUT], sizeof(c->out[0]), "%s", text);
+    c->out_count++;
+    pthread_cond_signal(&c->out_cond);
+}
+
+static void sleep_ms(long ms);
+
+static void *output_thread(void *arg)
+{
+    mhe_console *c = arg;
+    char text[sizeof(c->out[0])];
+
+    pthread_mutex_lock(&c->mutex);
+    for (;;)
+    {
+        while (! c->out_count)
+            pthread_cond_wait(&c->out_cond, &c->mutex);
+        snprintf(text, sizeof(text), "%s", c->out[c->out_head]);
+        c->out_head = (c->out_head + 1) % MAX_OUT;
+        c->out_count--;
+
+        pthread_mutex_unlock(&c->mutex);
+        sleep_ms(ANSWER_DELAY_MS);
+        c->reply(c->ctx, (const uint8_t *)text, strlen(text));
+        pthread_mutex_lock(&c->mutex);
+    }
+    return NULL;
 }
 
 static void handle_line(mhe_console *c, const char *line)
@@ -134,15 +177,20 @@ mhe_console *mhe_console_create(mhe_console_reply reply, void *ctx)
     c->reply = reply;
     c->ctx = ctx;
     pthread_mutex_init(&c->mutex, NULL);
+    pthread_cond_init(&c->out_cond, NULL);
+    if (pthread_create(&c->out_thread, NULL, output_thread, c) != 0)
+    {
+        free(c);
+        return NULL;
+    }
+    pthread_detach(c->out_thread);
     return c;
 }
 
 void mhe_console_destroy(mhe_console *c)
 {
-    if (! c)
-        return;
-    pthread_mutex_destroy(&c->mutex);
-    free(c);
+    /* the output thread still waits on it: the console is left to the process exit */
+    (void)c;
 }
 
 void mhe_console_feed(mhe_console *c, const uint8_t *data, size_t size)
