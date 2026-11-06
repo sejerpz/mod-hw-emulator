@@ -405,12 +405,16 @@ mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, con
     g_sc = sc;
 
 #ifdef MHE_WITH_SYS_HOST
-    /* creates /sys_msgs: mod-host must start after it */
-    sys_host_setup(debug != 0);
-    const int fd = shm_open("/sys_msgs", O_RDWR, 0);
-    sc->has_host = fd >= 0;
-    if (fd >= 0)
-        close(fd);
+    /* creates /sys_msgs: mod-host must start after it. MHE_NO_SYS_HOST=1 leaves it alone (a second emulator
+     * running next to one mod-host is talking to, a test) */
+    if (! getenv("MHE_NO_SYS_HOST"))
+    {
+        sys_host_setup(debug != 0);
+        const int fd = shm_open("/sys_msgs", O_RDWR, 0);
+        sc->has_host = fd >= 0;
+        if (fd >= 0)
+            close(fd);
+    }
 #endif
 
     atomic_store(&sc->running, 1);
