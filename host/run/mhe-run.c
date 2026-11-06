@@ -15,6 +15,8 @@
  *   turn INPUT STEPS             turn an encoder, negative steps anticlockwise
  *   press INPUT / release INPUT  hold or let go a button, footswitch or encoder push
  *   click INPUT                  press, 100 ms, release
+ *   chord INPUT INPUT [MS]       press both at once, release both MS later (300): footswitch B and C together
+ *                                change the footswitch page on the Dwarf
  *   send CHANNEL TEXT            send TEXT plus the protocol terminator (NUL) on a serial channel
  *   snap FILE.png                write the display (4x, as it looks with its backlight)
  *   leds                         print the led colours
@@ -297,6 +299,25 @@ static int run_command(char *line)
         g_mod->input_press(kind, id, 1);
         sleep_ms(100);
         g_mod->input_press(kind, id, 0);
+    }
+    else if (! strcmp(cmd, "chord") && argc >= 3)
+    {
+        /* chord INPUT INPUT [MS]: both down together, MS later both up. The Dwarf wants them within 50 ms but
+         * misses two presses in the same 1 ms scan, so they go down 8 ms apart, as a hand does.
+         * argv[2] is the rest of the line: the second input and the time */
+        char b[64];
+        int ms = 300;
+        mhe_input_kind kind_b;
+        uint8_t id_b;
+        if (sscanf(argv[2], "%63s %d", b, &ms) >= 1 && find_input(argv[1], &kind, &id) && find_input(b, &kind_b, &id_b))
+        {
+            g_mod->input_press(kind, id, 1);
+            sleep_ms(8);
+            g_mod->input_press(kind_b, id_b, 1);
+            sleep_ms((unsigned)ms);
+            g_mod->input_press(kind, id, 0);
+            g_mod->input_press(kind_b, id_b, 0);
+        }
     }
     else if (! strcmp(cmd, "send") && argc >= 3)
     {

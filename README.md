@@ -94,6 +94,10 @@ build/mod-hw-emulator --tcp webgui=9900 build/fw-dwarf.so
 Wheel or drag on a knob turns it, a click pushes it; Q/A W/S E/D turn the knobs from the keyboard, 1 2 3
 push them, Z X C are the footswitches A B C, F1-F3 the subpage buttons I II III, F4 Shift (the menu).
 
+Two footswitches together (B+C for the pedalboard and bank navigation, A+B for the tool mode): press both keys
+at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click the other one. `mhe-run` has
+`chord footswitchb footswitchc`.
+
 ## Layout
 
 | Path | What |

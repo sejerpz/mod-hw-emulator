@@ -254,16 +254,40 @@ void SwitchWidget::paintEvent(QPaintEvent *)
     p.setBrush(g);
     p.drawEllipse(body.adjusted(m_pressed ? 2 : 0, m_pressed ? 2 : 0, m_pressed ? -2 : 0, m_pressed ? -2 : 0));
 
+    /* armed for a press together with another switch */
+    if (m_armed)
+    {
+        p.setPen(QPen(QColor(255, 190, 40), 3, Qt::DashLine));
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(body.adjusted(-4, -4, 4, 4));
+    }
+
     drawLabel(p, rect(), m_name);
 }
 
-void SwitchWidget::mousePressEvent(QMouseEvent *)
+void SwitchWidget::setArmed(bool armed)
 {
+    if (armed == m_armed)
+        return;
+    m_armed = armed;
+    update();
+}
+
+void SwitchWidget::mousePressEvent(QMouseEvent *e)
+{
+    /* Ctrl+click arms (or disarms) the switch instead of pressing it */
+    if (e->modifiers() & Qt::ControlModifier)
+    {
+        setArmed(! m_armed);
+        return;
+    }
     setPressed(true);
 }
 
-void SwitchWidget::mouseReleaseEvent(QMouseEvent *)
+void SwitchWidget::mouseReleaseEvent(QMouseEvent *e)
 {
+    if (e->modifiers() & Qt::ControlModifier && ! m_pressed)
+        return;
     setPressed(false);
 }
 

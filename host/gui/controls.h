@@ -73,6 +73,12 @@ public:
 
     void setLed(const QColor &color);
     void setPressed(bool pressed);
+    bool isPressed() const { return m_pressed; }
+
+    /* armed with Ctrl+click: the next click on another switch presses both at once */
+    bool isArmed() const { return m_armed; }
+    void setArmed(bool armed);
+
     QSize sizeHint() const override;
 
 protected:
@@ -86,6 +92,7 @@ private:
     QColor m_led = Qt::black;
     bool m_hasLed = false;
     bool m_pressed = false;
+    bool m_armed = false;
 };
 
 /* a led with no control of its own */

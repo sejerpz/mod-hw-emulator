@@ -8,7 +8,8 @@
  * will place the same controls on a picture of the device.
  *
  * Keyboard: Q/A W/S E/D turn encoders 1-3 (anticlockwise/clockwise), 1 2 3 push them,
- *           Z X C footswitches in panel order, F1-F4 buttons.
+ *           Z X C footswitches in panel order, F1-F4 buttons; keys pressed together go down together.
+ * Mouse:    Ctrl+click arms a footswitch or button: the next click on another one presses both at once.
  */
 
 #include "controls.h"
@@ -21,8 +22,10 @@
 #include <QMessageBox>
 #include <QStatusBar>
 #include <QMainWindow>
+#include <QThread>
 #include <QTimer>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 
@@ -87,7 +90,7 @@ public:
                 const bool foot = in.kind == MHE_INPUT_FOOTSWITCH;
                 auto *w = new SwitchWidget(name, foot, central);
                 const InputRef ref { in.kind, in.id };
-                w->onPress = [this, ref](bool pressed) { m_emulator.press(ref.kind, ref.id, pressed); };
+                w->onPress = [this, w, ref](bool pressed) { switchPressed(w, ref, pressed); };
                 (foot ? footswitches : buttons)->addWidget(w);
                 (foot ? m_footswitches : m_buttons).push_back(w);
                 m_byName[name] = w;
@@ -130,7 +133,13 @@ public:
         /* the display at 4x by default */
         resize(sizeHint().expandedTo(QSize(620, 860)));
 
-        statusBar()->showMessage(QStringLiteral("Q/A W/S E/D turn, 1 2 3 push, Z X C footswitches, F1-F4 buttons"));
+        statusBar()->showMessage(QStringLiteral("Q/A W/S E/D turn, 1 2 3 push, Z X C footswitches, F1-F4 buttons; "
+                                                "Ctrl+click arms a switch to press it with the next one"));
+
+        /* switch keys pressed close together go down together, see key() */
+        m_keyChord.setSingleShot(true);
+        m_keyChord.setInterval(kChordWindowMs);
+        connect(&m_keyChord, &QTimer::timeout, this, [this]() { pressPendingKeys(); });
     }
 
     /* ---- Emulator::Listener, on emulator threads: hand over to the GUI thread ---- */
@@ -202,15 +211,101 @@ private:
             if (k == pushKeys[i] && m_encoders[i]->onPress)
                 m_encoders[i]->onPress(down);
         }
+        SwitchWidget *s = nullptr;
         for (size_t i = 0; i < 3 && i < m_footswitches.size(); ++i)
             if (k == footKeys[i])
-                m_footswitches[i]->setPressed(down);
+                s = m_footswitches[i];
         for (size_t i = 0; i < 4 && i < m_buttons.size(); ++i)
             if (k == buttonKeys[i])
-                m_buttons[i]->setPressed(down);
+                s = m_buttons[i];
+        if (s)
+            switchKey(s, down);
+    }
+
+    /*
+     * Two footswitches count as pressed together on the Dwarf when they go down within 50 ms
+     * (BUTTON_DOUBLE_PRESS_DEBOUNCE), which is how the footswitch pages are reached. Two keys never go down
+     * that close by chance, so the keys pressed within kChordWindowMs of each other are held back and sent
+     * together.
+     */
+    static constexpr int kChordWindowMs = 40;
+
+    void switchKey(SwitchWidget *s, bool down)
+    {
+        auto pending = std::find(m_pendingKeys.begin(), m_pendingKeys.end(), s);
+
+        if (down)
+        {
+            if (pending == m_pendingKeys.end() && ! s->isPressed())
+                m_pendingKeys.push_back(s);
+            if (! m_keyChord.isActive())
+                m_keyChord.start();
+            return;
+        }
+
+        /* let go before the window closed: it still went down, with whatever came along */
+        if (pending != m_pendingKeys.end())
+        {
+            m_keyChord.stop();
+            pressPendingKeys();
+        }
+        s->setPressed(false);
+    }
+
+    void pressPendingKeys()
+    {
+        const std::vector<SwitchWidget *> keys = std::move(m_pendingKeys);
+        m_pendingKeys.clear();
+        for (size_t i = 0; i < keys.size(); ++i)
+        {
+            if (i)
+                QThread::msleep(kChordStaggerMs);
+            keys[i]->setPressed(true);
+        }
+    }
+
+    /* the Dwarf misses two presses in the same 1 ms scan: the switches of a chord go down a few ms apart */
+    static constexpr int kChordStaggerMs = 8;
+
+    /* a switch going down takes the armed ones (Ctrl+click) down with it, and they go up with it */
+    void switchPressed(SwitchWidget *w, const InputRef &ref, bool pressed)
+    {
+        if (pressed)
+        {
+            std::vector<SwitchWidget *> armed;
+            for (SwitchWidget *o : allSwitches())
+                if (o != w && o->isArmed())
+                    armed.push_back(o);
+            for (SwitchWidget *o : armed)
+            {
+                o->setArmed(false);
+                m_chordOf[w].push_back(o);
+                o->setPressed(true);
+                QThread::msleep(kChordStaggerMs);
+            }
+            m_emulator.press(ref.kind, ref.id, true);
+        }
+        else
+        {
+            m_emulator.press(ref.kind, ref.id, false);
+            const std::vector<SwitchWidget *> along = std::move(m_chordOf[w]);
+            m_chordOf.erase(w);
+            for (SwitchWidget *o : along)
+                o->setPressed(false);
+        }
+    }
+
+    std::vector<SwitchWidget *> allSwitches() const
+    {
+        std::vector<SwitchWidget *> all(m_footswitches);
+        all.insert(all.end(), m_buttons.begin(), m_buttons.end());
+        return all;
     }
 
     Emulator m_emulator;
+    QTimer m_keyChord;
+    std::vector<SwitchWidget *> m_pendingKeys;
+    std::map<SwitchWidget *, std::vector<SwitchWidget *>> m_chordOf;
     std::map<uint8_t, LcdWidget *> m_lcds;
     std::vector<EncoderWidget *> m_encoders;
     std::vector<SwitchWidget *> m_footswitches;
