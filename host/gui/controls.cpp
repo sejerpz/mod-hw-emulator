@@ -166,8 +166,9 @@ void EncoderWidget::paintEvent(QPaintEvent *)
             p.drawEllipse(c, R * 0.93, R * 0.93);
         }
 
-        p.setPen(QPen(QColor(0x2f, 0x30, 0x34), R * 0.03));
-        p.setBrush(m_pressed ? QColor(0x10, 0x10, 0x12) : QColor(0x1a, 0x1b, 0x1e));
+        /* the colours of the cap in mkskin.py */
+        p.setPen(QPen(QColor(0x6c, 0x6f, 0x76), R * 0.03));
+        p.setBrush(m_pressed ? QColor(0x2a, 0x2b, 0x30) : QColor(0x46, 0x48, 0x4e));
         p.drawEllipse(c, R * 0.557, R * 0.557);
 
         const QPointF u(std::cos(a), std::sin(a));

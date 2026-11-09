@@ -30,13 +30,13 @@ a('''<defs>
  <linearGradient id="ramp" x1="0" y1="0" x2="0" y2="1">
   <stop offset="0" stop-color="#1e1f22"/><stop offset="1" stop-color="#151618"/></linearGradient>
  <radialGradient id="knob" cx="0.4" cy="0.35" r="0.75">
-  <stop offset="0" stop-color="#4a4c52"/><stop offset="0.6" stop-color="#202124"/><stop offset="1" stop-color="#0c0c0d"/></radialGradient>
+  <stop offset="0" stop-color="#9a9ea6"/><stop offset="0.55" stop-color="#55585f"/><stop offset="1" stop-color="#2a2b30"/></radialGradient>
  <radialGradient id="chrome" cx="0.38" cy="0.32" r="0.8">
   <stop offset="0" stop-color="#f4f5f7"/><stop offset="0.45" stop-color="#a9adb4"/><stop offset="1" stop-color="#4b4e54"/></radialGradient>
  <linearGradient id="nut" x1="0" y1="0" x2="1" y2="1">
   <stop offset="0" stop-color="#d8dade"/><stop offset="1" stop-color="#6c7077"/></linearGradient>
  <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
-  <stop offset="0" stop-color="#2c2d31"/><stop offset="1" stop-color="#121214"/></linearGradient>
+  <stop offset="0" stop-color="#6a6d75"/><stop offset="1" stop-color="#383a40"/></linearGradient>
  <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0.4" dy="0.8" stdDeviation="0.7" flood-color="#000" flood-opacity="0.7"/></filter>
 </defs>''')
 # enclosure: outer bezel, top panel, front ramp (fold at z=19.9 and 31.1)
@@ -48,20 +48,20 @@ a(f'<line x1="-99.6" y1="31.1" x2="99.6" y2="31.1" stroke="#0b0b0c" stroke-width
 a(f'<rect x="-100" y="49.2" width="200" height="0.8" fill="#0d0d0e"/>')
 # display: recess, then the glass (the LcdWidget paints the pixels on the LCD rect)
 wx0, wz0, wx1, wz1 = WIN
-a(f'<rect x="{wx0-0.6}" y="{wz0-0.6}" width="{wx1-wx0+1.2}" height="{wz1-wz0+1.2}" rx="2.2" fill="#0a0a0b" stroke="#45464b" stroke-width="0.3"/>')
-a(f'<rect x="{wx0+1}" y="{wz0+1}" width="{wx1-wx0-2}" height="{wz1-wz0-2}" rx="1.2" fill="#0f1a20"/>')
-a(f'<rect x="{LCD_CX-LCD_W/2}" y="{LCD_CZ-LCD_H/2}" width="{LCD_W}" height="{LCD_H}" fill="#7fc6e6"/>')
+a(f'<rect x="{wx0-0.6}" y="{wz0-0.6}" width="{wx1-wx0+1.2}" height="{wz1-wz0+1.2}" rx="2.2" fill="#16171a" stroke="#6e7076" stroke-width="0.3"/>')
+a(f'<rect x="{wx0+1}" y="{wz0+1}" width="{wx1-wx0-2}" height="{wz1-wz0-2}" rx="1.2" fill="#24404d"/>')
+a(f'<rect x="{LCD_CX-LCD_W/2}" y="{LCD_CZ-LCD_H/2}" width="{LCD_W}" height="{LCD_H}" fill="#a6e1fa"/>')
 # knobs: collar, knob with knurl ring and pointer
 for x in KNOBS_X:
-    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="10.6" fill="#0b0b0c" stroke="#3d3e43" stroke-width="0.3"/>')
+    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="10.6" fill="#18191c" stroke="#5c5e64" stroke-width="0.3"/>')
     a(f'<circle cx="{x}" cy="{KNOB_Z}" r="9.0" fill="url(#knob)" filter="url(#sh)"/>')
-    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="7.2" fill="none" stroke="#3a3b40" stroke-width="0.9" stroke-dasharray="0.35 0.35"/>')
-    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="5.9" fill="#1a1b1e" stroke="#2f3034" stroke-width="0.3"/>')
+    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="7.2" fill="none" stroke="#7a7d84" stroke-width="0.9" stroke-dasharray="0.35 0.35"/>')
+    a(f'<circle cx="{x}" cy="{KNOB_Z}" r="5.9" fill="#46484e" stroke="#6c6f76" stroke-width="0.3"/>')
     a(f'<line x1="{x}" y1="{KNOB_Z-5.4}" x2="{x}" y2="{KNOB_Z-2.8}" stroke="#d6d8dc" stroke-width="0.6" stroke-linecap="round"/>')
 # buttons under the knobs (Subpage I, II, III) and Shift
 def button(cx, cz, w, h):
-    a(f'<rect x="{cx-w/2-0.5}" y="{cz-h/2-0.5}" width="{w+1}" height="{h+1}" rx="1.6" fill="#08080a"/>')
-    a(f'<rect x="{cx-w/2+0.3}" y="{cz-h/2+0.3}" width="{w-0.6}" height="{h-0.6}" rx="1.2" fill="url(#btn)" stroke="#3a3b40" stroke-width="0.25" filter="url(#sh)"/>')
+    a(f'<rect x="{cx-w/2-0.5}" y="{cz-h/2-0.5}" width="{w+1}" height="{h+1}" rx="1.6" fill="#141517"/>')
+    a(f'<rect x="{cx-w/2+0.3}" y="{cz-h/2+0.3}" width="{w-0.6}" height="{h-0.6}" rx="1.2" fill="url(#btn)" stroke="#7d8087" stroke-width="0.25" filter="url(#sh)"/>')
 for x in KNOBS_X:
     button(x, BTN_Z, BTN_W, BTN_H)
 button(*SHIFT)
