@@ -121,9 +121,10 @@ pot values; their LPC/ADC and display controller models are added when their fir
 
 - Controls are widgets bound to logical ids: LCD (scaled framebuffer, pixel grid, backlight colour), encoder
   (wheel/drag to turn, click to push), button/footswitch with its LED, pot.
-- The layout is separate from the controls: `SimpleLayout` now (display on top, encoders, then buttons and
-  footswitches), `SkinLayout` later (device picture as background, each control at the rectangle given in the
-  profile).
+- The layout is separate from the controls: `SkinLayout` (device picture as background, each control at the
+  rectangle of its name in `devices/DEVICE/skin/DEVICE-panel.json`, leds at "LED name"; skinned controls draw
+  only what changes: knob pointer, led colours, pressed and armed switches) and `SimpleLayout` (display on
+  top, encoders, then buttons and footswitches) for devices with no skin or `--simple`.
 - Keyboard shortcuts for every control.
 - Toolkit: Qt5 Widgets (already shipped by mod-desktop). A headless runner (`mhe-run`) exists for tests and
   for CI: it can dump the display as PBM/PNG and drive inputs from a script.
@@ -159,7 +160,7 @@ pot values; their LPC/ADC and display controller models are added when their fir
    processing) and runs as a JACK internal client, the only mode where it opens `/sys_msgs`. POSIX shared
    memory, so Linux and macOS; Windows needs a transport of its own (TCP) on both sides.
 5. Overlay for an installed mod-desktop; PawPaw build of the emulator.
-6. Skin layout; Duo X and Duo profiles.
+6. **Done** — Skin layout, Dwarf panel picture. Duo X and Duo profiles: to do.
 
 ## What the spike taught
 

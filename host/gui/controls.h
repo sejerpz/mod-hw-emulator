@@ -2,16 +2,21 @@
  * mod-hw-emulator — panel controls
  *
  * Each control is a widget bound to a logical id of the device. Controls know nothing of where they are:
- * a layout places them (SimpleLayout now; a skin layout will put them on a picture of the device).
+ * a layout places them (SimpleLayout, or SkinLayout on a picture of the device).
+ *
+ * Skinned, a control lies over its own picture on the panel and draws only what changes: the pointer of a
+ * knob, the colour of a led, a pressed or armed switch. The picture shows through the rest.
  */
 
 #pragma once
 
 #include <QColor>
 #include <QImage>
+#include <QPixmap>
 #include <QWidget>
 
 #include <functional>
+#include <utility>
 #include <vector>
 
 /* the LCD: the frame scaled up, with the pixel grid and the backlight */
@@ -23,11 +28,13 @@ public:
     void setFrame(int width, int height, const std::vector<uint8_t> &mono1, int brightness);
     QSize sizeHint() const override;
     QSize minimumSizeHint() const override;
+    void setSkinned(bool skinned) { m_skinned = skinned; }
 
 protected:
     void paintEvent(QPaintEvent *) override;
 
 private:
+    bool m_skinned = false;
     int m_width, m_height;
     std::vector<uint8_t> m_bits;
     int m_brightness = 255;
@@ -45,6 +52,7 @@ public:
     void setLed(const QColor &color);
     void turnFromKeyboard(int steps);
     QSize sizeHint() const override;
+    void setSkinned(bool skinned);
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -54,6 +62,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *) override;
 
 private:
+    bool m_skinned = false;
     QString m_name;
     QColor m_led = Qt::black;
     int m_angle = 0;          /* in steps, for the drawing */
@@ -80,6 +89,7 @@ public:
     void setArmed(bool armed);
 
     QSize sizeHint() const override;
+    void setSkinned(bool skinned);
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -87,6 +97,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *) override;
 
 private:
+    bool m_skinned = false;
     QString m_name;
     bool m_footswitch;
     QColor m_led = Qt::black;
@@ -102,11 +113,35 @@ public:
     LedWidget(const QString &name, QWidget *parent = nullptr);
     void setLed(const QColor &color);
     QSize sizeHint() const override;
+    void setSkinned(bool skinned);
 
 protected:
     void paintEvent(QPaintEvent *) override;
 
 private:
+    bool m_skinned = false;
     QString m_name;
     QColor m_led = Qt::black;
+};
+
+/* the picture of the device: lays its children on their rectangles, at the scale it is drawn */
+class PanelWidget : public QWidget
+{
+public:
+    PanelWidget(const QPixmap &picture, QWidget *parent = nullptr);
+
+    /* RECT in the pixels of the picture */
+    void place(QWidget *w, const QRect &rect);
+    QSize sizeHint() const override;
+
+protected:
+    void paintEvent(QPaintEvent *) override;
+    void resizeEvent(QResizeEvent *) override;
+
+private:
+    QRectF target() const;
+    void layoutChildren();
+
+    QPixmap m_picture;
+    std::vector<std::pair<QWidget *, QRect>> m_placed;
 };

@@ -71,6 +71,25 @@ QSize LcdWidget::minimumSizeHint() const
 void LcdWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
+
+    const double k = 0.25 + 0.75 * m_brightness / 255.0;
+    const QColor lit(static_cast<int>(235 * k), static_cast<int>(240 * k), static_cast<int>(245 * k));
+    const QColor off(14, 15, 18);
+    const int stride = (m_width + 7) / 8;
+
+    /* skinned: the glass of the picture is exactly the pixel area, at any scale */
+    if (m_skinned)
+    {
+        p.fillRect(rect(), off);
+        const double sx = width() / double(m_width), sy = height() / double(m_height);
+        const double gap = sx >= 3 ? 0.6 : 0;
+        for (int y = 0; y < m_height; ++y)
+            for (int x = 0; x < m_width; ++x)
+                if ((m_bits[static_cast<size_t>(y * stride + x / 8)] >> (7 - x % 8)) & 1)
+                    p.fillRect(QRectF(x * sx, y * sy, sx - gap, sy - gap), lit);
+        return;
+    }
+
     p.fillRect(rect(), kPanel);
 
     const int scale = std::max(1, std::min((width() - 24) / m_width, (height() - 24) / m_height));
@@ -81,12 +100,8 @@ void LcdWidget::paintEvent(QPaintEvent *)
     p.fillRect(screen.adjusted(-10, -10, 10, 10), QColor(12, 12, 14));
 
     /* negative LCD: lit pixels show the backlight, the rest stays dark */
-    const double k = 0.25 + 0.75 * m_brightness / 255.0;
-    const QColor lit(static_cast<int>(235 * k), static_cast<int>(240 * k), static_cast<int>(245 * k));
-    const QColor off(14, 15, 18);
     p.fillRect(screen, off);
 
-    const int stride = (m_width + 7) / 8;
     const int gap = scale >= 4 ? 1 : 0;
     for (int y = 0; y < m_height; ++y)
         for (int x = 0; x < m_width; ++x)
@@ -123,10 +138,43 @@ void EncoderWidget::turnFromKeyboard(int steps)
         onTurn(steps);
 }
 
+void EncoderWidget::setSkinned(bool skinned)
+{
+    m_skinned = skinned;
+    setMinimumSize(skinned ? QSize(8, 8) : sizeHint());
+}
+
 void EncoderWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
+
+    /* pointer angle: 20 detents per turn, 0 at the top */
+    const double a = (m_angle % 20) * (2 * M_PI / 20) - M_PI / 2;
+
+    /* skinned: the rectangle is the collar of the knob in the picture (radius R, see mkskin.py); the cap
+     * (0.56 R) is drawn again to cover the pointer of the picture, and the turning pointer over it */
+    if (m_skinned)
+    {
+        const QPointF c(width() / 2.0, height() / 2.0);
+        const double R = std::min(width(), height()) / 2.0;
+
+        if (m_led.red() + m_led.green() + m_led.blue() >= 8)
+        {
+            p.setPen(QPen(ledLook(m_led), R * 0.09));
+            p.setBrush(Qt::NoBrush);
+            p.drawEllipse(c, R * 0.93, R * 0.93);
+        }
+
+        p.setPen(QPen(QColor(0x2f, 0x30, 0x34), R * 0.03));
+        p.setBrush(m_pressed ? QColor(0x10, 0x10, 0x12) : QColor(0x1a, 0x1b, 0x1e));
+        p.drawEllipse(c, R * 0.557, R * 0.557);
+
+        const QPointF u(std::cos(a), std::sin(a));
+        p.setPen(QPen(QColor(0xd6, 0xd8, 0xdc), R * 0.057, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(c + u * R * 0.264, c + u * R * 0.509);
+        return;
+    }
 
     const int d = std::min(width(), height() - 20) - 12;
     const QRectF knob((width() - d) / 2.0, 6, d, d);
@@ -143,8 +191,7 @@ void EncoderWidget::paintEvent(QPaintEvent *)
     p.setBrush(g);
     p.drawEllipse(knob);
 
-    /* pointer: 20 detents per turn */
-    const double a = (m_angle % 20) * (2 * M_PI / 20) - M_PI / 2;
+    /* pointer */
     const QPointF c = knob.center();
     p.setPen(QPen(QColor(30, 30, 30), 3, Qt::SolidLine, Qt::RoundCap));
     p.drawLine(c + QPointF(std::cos(a), std::sin(a)) * d * 0.15, c + QPointF(std::cos(a), std::sin(a)) * d * 0.42);
@@ -231,10 +278,46 @@ void SwitchWidget::setPressed(bool pressed)
         onPress(pressed);
 }
 
+void SwitchWidget::setSkinned(bool skinned)
+{
+    m_skinned = skinned;
+    setMinimumSize(skinned ? QSize(8, 8) : sizeHint());
+}
+
 void SwitchWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
+
+    /* skinned: the picture draws the switch, a pressed one is shaded and an armed one ringed. A footswitch
+     * rectangle holds its hexagon nut (radius R), the round cap is 0.76 R; a button fills its rectangle */
+    if (m_skinned)
+    {
+        const QRectF r = QRectF(rect()).adjusted(1, 1, -1, -1);
+        const QPointF c = r.center();
+        const double R = std::min(r.width(), r.height()) / 2.0;
+        const double round = std::min(r.width(), r.height()) * 0.14;
+
+        if (m_pressed)
+        {
+            p.setPen(Qt::NoPen);
+            p.setBrush(QColor(0, 0, 0, 110));
+            if (m_footswitch)
+                p.drawEllipse(c, R * 0.76, R * 0.76);
+            else
+                p.drawRoundedRect(r, round, round);
+        }
+        if (m_armed)
+        {
+            p.setPen(QPen(QColor(255, 190, 40), std::max(2.0, R * 0.06), Qt::DashLine));
+            p.setBrush(Qt::NoBrush);
+            if (m_footswitch)
+                p.drawEllipse(c, R * 0.95, R * 0.95);
+            else
+                p.drawRoundedRect(r.adjusted(1, 1, -1, -1), round, round);
+        }
+        return;
+    }
 
     const int d = std::min(width(), height() - 20) - (m_footswitch ? 20 : 24);
     const QRectF body((width() - d) / 2.0, m_footswitch ? 24 : 6, d, d);
@@ -311,12 +394,88 @@ void LedWidget::setLed(const QColor &color)
     update();
 }
 
+void LedWidget::setSkinned(bool skinned)
+{
+    m_skinned = skinned;
+    setMinimumSize(skinned ? QSize(4, 4) : sizeHint());
+}
+
 void LedWidget::paintEvent(QPaintEvent *)
 {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
+
+    /* skinned: the picture draws the led off, a lit one is drawn over it */
+    if (m_skinned)
+    {
+        if (m_led.red() + m_led.green() + m_led.blue() < 8)
+            return;
+        const QColor c = ledLook(m_led);
+        const QPointF center(width() / 2.0, height() / 2.0);
+        const double r = std::min(width(), height()) / 2.0;
+        QRadialGradient g(center, r);
+        g.setColorAt(0, c.lighter(130));
+        g.setColorAt(0.75, c);
+        g.setColorAt(1, c.darker(160));
+        p.setPen(Qt::NoPen);
+        p.setBrush(g);
+        p.drawEllipse(center, r, r);
+        return;
+    }
+
     p.setPen(QPen(QColor(10, 10, 10), 1));
     p.setBrush(ledLook(ledOrOff(m_led)));
     p.drawEllipse(QRectF(width() / 2.0 - 8, 4, 16, 16));
     drawLabel(p, rect(), m_name);
+}
+
+/* ---- panel picture ---- */
+
+PanelWidget::PanelWidget(const QPixmap &picture, QWidget *parent)
+    : QWidget(parent), m_picture(picture)
+{
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    setMinimumSize(m_picture.size() / 4);
+}
+
+QSize PanelWidget::sizeHint() const
+{
+    return m_picture.size();
+}
+
+void PanelWidget::place(QWidget *w, const QRect &rect)
+{
+    m_placed.emplace_back(w, rect);
+    layoutChildren();
+}
+
+/* where the picture goes: as large as fits, aspect kept, centred */
+QRectF PanelWidget::target() const
+{
+    const QSizeF s = QSizeF(m_picture.size()).scaled(size(), Qt::KeepAspectRatio);
+    return QRectF(QPointF((width() - s.width()) / 2.0, (height() - s.height()) / 2.0), s);
+}
+
+void PanelWidget::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::SmoothPixmapTransform);
+    p.drawPixmap(target(), m_picture, QRectF(m_picture.rect()));
+}
+
+void PanelWidget::resizeEvent(QResizeEvent *)
+{
+    layoutChildren();
+}
+
+void PanelWidget::layoutChildren()
+{
+    const QRectF t = target();
+    const double k = t.width() / m_picture.width();
+    for (const auto &placed : m_placed)
+    {
+        const QRect &r = placed.second;
+        placed.first->setGeometry(QRectF(t.x() + r.x() * k, t.y() + r.y() * k, r.width() * k, r.height() * k)
+                                      .toAlignedRect());
+    }
 }

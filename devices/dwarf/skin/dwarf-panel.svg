@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-101 -51 202 102" width="1010" height="510">
+<defs>
+ <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#2a2b2f"/><stop offset="1" stop-color="#1c1d20"/></linearGradient>
+ <linearGradient id="ramp" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#1e1f22"/><stop offset="1" stop-color="#151618"/></linearGradient>
+ <radialGradient id="knob" cx="0.4" cy="0.35" r="0.75">
+  <stop offset="0" stop-color="#4a4c52"/><stop offset="0.6" stop-color="#202124"/><stop offset="1" stop-color="#0c0c0d"/></radialGradient>
+ <radialGradient id="chrome" cx="0.38" cy="0.32" r="0.8">
+  <stop offset="0" stop-color="#f4f5f7"/><stop offset="0.45" stop-color="#a9adb4"/><stop offset="1" stop-color="#4b4e54"/></radialGradient>
+ <linearGradient id="nut" x1="0" y1="0" x2="1" y2="1">
+  <stop offset="0" stop-color="#d8dade"/><stop offset="1" stop-color="#6c7077"/></linearGradient>
+ <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0" stop-color="#2c2d31"/><stop offset="1" stop-color="#121214"/></linearGradient>
+ <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0.4" dy="0.8" stdDeviation="0.7" flood-color="#000" flood-opacity="0.7"/></filter>
+</defs>
+<rect x="-101" y="-51" width="202" height="102" rx="4.5" fill="#101012"/>
+<rect x="-100" y="-50" width="200" height="100" rx="4" fill="url(#body)" stroke="#3a3b40" stroke-width="0.3"/>
+<rect x="-99.6" y="19.9" width="199.2" height="29.7" rx="0" fill="url(#ramp)"/>
+<line x1="-99.6" y1="19.9" x2="99.6" y2="19.9" stroke="#3b3c41" stroke-width="0.35"/>
+<line x1="-99.6" y1="31.1" x2="99.6" y2="31.1" stroke="#0b0b0c" stroke-width="0.3"/>
+<rect x="-100" y="49.2" width="200" height="0.8" fill="#0d0d0e"/>
+<rect x="-72.5" y="-36.9" width="72.2" height="40.2" rx="2.2" fill="#0a0a0b" stroke="#45464b" stroke-width="0.3"/>
+<rect x="-70.9" y="-35.3" width="69.0" height="37.0" rx="1.2" fill="#0f1a20"/>
+<rect x="-68.4" y="-32.8" width="64.0" height="32.0" fill="#7fc6e6"/>
+<circle cx="16.7" cy="-25.3" r="10.6" fill="#0b0b0c" stroke="#3d3e43" stroke-width="0.3"/>
+<circle cx="16.7" cy="-25.3" r="9.0" fill="url(#knob)" filter="url(#sh)"/>
+<circle cx="16.7" cy="-25.3" r="7.2" fill="none" stroke="#3a3b40" stroke-width="0.9" stroke-dasharray="0.35 0.35"/>
+<circle cx="16.7" cy="-25.3" r="5.9" fill="#1a1b1e" stroke="#2f3034" stroke-width="0.3"/>
+<line x1="16.7" y1="-30.700000000000003" x2="16.7" y2="-28.1" stroke="#d6d8dc" stroke-width="0.6" stroke-linecap="round"/>
+<circle cx="48.7" cy="-25.3" r="10.6" fill="#0b0b0c" stroke="#3d3e43" stroke-width="0.3"/>
+<circle cx="48.7" cy="-25.3" r="9.0" fill="url(#knob)" filter="url(#sh)"/>
+<circle cx="48.7" cy="-25.3" r="7.2" fill="none" stroke="#3a3b40" stroke-width="0.9" stroke-dasharray="0.35 0.35"/>
+<circle cx="48.7" cy="-25.3" r="5.9" fill="#1a1b1e" stroke="#2f3034" stroke-width="0.3"/>
+<line x1="48.7" y1="-30.700000000000003" x2="48.7" y2="-28.1" stroke="#d6d8dc" stroke-width="0.6" stroke-linecap="round"/>
+<circle cx="80.7" cy="-25.3" r="10.6" fill="#0b0b0c" stroke="#3d3e43" stroke-width="0.3"/>
+<circle cx="80.7" cy="-25.3" r="9.0" fill="url(#knob)" filter="url(#sh)"/>
+<circle cx="80.7" cy="-25.3" r="7.2" fill="none" stroke="#3a3b40" stroke-width="0.9" stroke-dasharray="0.35 0.35"/>
+<circle cx="80.7" cy="-25.3" r="5.9" fill="#1a1b1e" stroke="#2f3034" stroke-width="0.3"/>
+<line x1="80.7" y1="-30.700000000000003" x2="80.7" y2="-28.1" stroke="#d6d8dc" stroke-width="0.6" stroke-linecap="round"/>
+<rect x="8.799999999999999" y="-10.2" width="15.8" height="9.8" rx="1.6" fill="#08080a"/>
+<rect x="9.6" y="-9.399999999999999" width="14.200000000000001" height="8.200000000000001" rx="1.2" fill="url(#btn)" stroke="#3a3b40" stroke-width="0.25" filter="url(#sh)"/>
+<rect x="40.800000000000004" y="-10.2" width="15.8" height="9.8" rx="1.6" fill="#08080a"/>
+<rect x="41.6" y="-9.399999999999999" width="14.200000000000001" height="8.200000000000001" rx="1.2" fill="url(#btn)" stroke="#3a3b40" stroke-width="0.25" filter="url(#sh)"/>
+<rect x="72.8" y="-10.2" width="15.8" height="9.8" rx="1.6" fill="#08080a"/>
+<rect x="73.6" y="-9.399999999999999" width="14.200000000000001" height="8.200000000000001" rx="1.2" fill="url(#btn)" stroke="#3a3b40" stroke-width="0.25" filter="url(#sh)"/>
+<rect x="-94.6" y="-23.9" width="14.2" height="14.2" rx="1.6" fill="#08080a"/>
+<rect x="-93.8" y="-23.099999999999998" width="12.6" height="12.6" rx="1.2" fill="url(#btn)" stroke="#3a3b40" stroke-width="0.25" filter="url(#sh)"/>
+<circle cx="-80.7" cy="17.0" r="1.9500000000000002" fill="#0a0a0b"/><circle cx="-80.7" cy="17.0" r="1.6" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="0.0" cy="17.0" r="1.9500000000000002" fill="#0a0a0b"/><circle cx="0.0" cy="17.0" r="1.6" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="80.7" cy="17.0" r="1.9500000000000002" fill="#0a0a0b"/><circle cx="80.7" cy="17.0" r="1.6" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="-80.7" cy="-44.5" r="1.4500000000000002" fill="#0a0a0b"/><circle cx="-80.7" cy="-44.5" r="1.1" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="-59.7" cy="-44.5" r="1.4500000000000002" fill="#0a0a0b"/><circle cx="-59.7" cy="-44.5" r="1.1" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="59.7" cy="-44.5" r="1.4500000000000002" fill="#0a0a0b"/><circle cx="59.7" cy="-44.5" r="1.1" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<circle cx="80.7" cy="-44.5" r="1.4500000000000002" fill="#0a0a0b"/><circle cx="80.7" cy="-44.5" r="1.1" fill="#2a1c1c" stroke="#47484d" stroke-width="0.2"/>
+<polygon points="-73.60,43.40 -80.70,47.50 -87.80,43.40 -87.80,35.20 -80.70,31.10 -73.60,35.20" fill="url(#nut)" stroke="#3a3c40" stroke-width="0.25" filter="url(#sh)"/>
+<circle cx="-80.7" cy="39.3" r="6.2" fill="#55585e"/>
+<circle cx="-80.7" cy="39.3" r="5.3" fill="url(#chrome)" stroke="#2f3135" stroke-width="0.25"/>
+<polygon points="7.10,43.40 0.00,47.50 -7.10,43.40 -7.10,35.20 -0.00,31.10 7.10,35.20" fill="url(#nut)" stroke="#3a3c40" stroke-width="0.25" filter="url(#sh)"/>
+<circle cx="0.0" cy="39.3" r="6.2" fill="#55585e"/>
+<circle cx="0.0" cy="39.3" r="5.3" fill="url(#chrome)" stroke="#2f3135" stroke-width="0.25"/>
+<polygon points="87.80,43.40 80.70,47.50 73.60,43.40 73.60,35.20 80.70,31.10 87.80,35.20" fill="url(#nut)" stroke="#3a3c40" stroke-width="0.25" filter="url(#sh)"/>
+<circle cx="80.7" cy="39.3" r="6.2" fill="#55585e"/>
+<circle cx="80.7" cy="39.3" r="5.3" fill="url(#chrome)" stroke="#2f3135" stroke-width="0.25"/>
+<circle cx="-84.3" cy="23.2" r="1.9" fill="none" stroke="#b9bcc2" stroke-width="0.3"/>
+<text x="-84.3" y="23.95" font-size="2.3" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">A</text>
+<line x1="-81.60000000000001" y1="21.6" x2="-81.60000000000001" y2="24.8" stroke="#b9bcc2" stroke-width="0.25"/>
+<circle cx="-3.6" cy="23.2" r="1.9" fill="none" stroke="#b9bcc2" stroke-width="0.3"/>
+<text x="-3.6" y="23.95" font-size="2.3" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">B</text>
+<line x1="-0.9" y1="21.6" x2="-0.9" y2="24.8" stroke="#b9bcc2" stroke-width="0.25"/>
+<circle cx="77.10000000000001" cy="23.2" r="1.9" fill="none" stroke="#b9bcc2" stroke-width="0.3"/>
+<text x="77.10000000000001" y="23.95" font-size="2.3" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">C</text>
+<line x1="79.8" y1="21.6" x2="79.8" y2="24.8" stroke="#b9bcc2" stroke-width="0.25"/>
+<rect x="-80.10000000000001" y="22.2" width="2" height="2" fill="#b9bcc2"/>
+<rect x="-77.50000000000001" y="22.2" width="2" height="2" fill="none" stroke="#b9bcc2" stroke-width="0.25"/>
+<rect x="-74.9" y="22.2" width="2" height="2" fill="none" stroke="#b9bcc2" stroke-width="0.25"/>
+<polygon points="0.8,24.3 3.2,24.3 2.0,22.099999999999998" fill="#b9bcc2"/>
+<polygon points="81.5,22.099999999999998 83.9,22.099999999999998 82.7,24.3" fill="#b9bcc2"/>
+<line x1="-69.7" y1="39.3" x2="-44.35" y2="39.3" stroke="#b9bcc2" stroke-width="0.25"/>
+<line x1="-36.35" y1="39.3" x2="-11.0" y2="39.3" stroke="#b9bcc2" stroke-width="0.25"/>
+<line x1="11.0" y1="39.3" x2="36.35" y2="39.3" stroke="#b9bcc2" stroke-width="0.25"/>
+<line x1="44.35" y1="39.3" x2="69.7" y2="39.3" stroke="#b9bcc2" stroke-width="0.25"/>
+<path d="M-41.25,37.099999999999994 L-41.25,39.4 Q-41.25,40.199999999999996 -40.35,40.199999999999996 Q-39.45,40.199999999999996 -39.45,39.4 L-39.45,37.099999999999994 M-40.35,40.199999999999996 L-40.35,41.699999999999996" fill="none" stroke="#b9bcc2" stroke-width="0.35" stroke-linecap="round" transform="rotate(30 -40.35 39.3)"/>
+<circle cx="37.75" cy="39.3" r="1.1" fill="none" stroke="#b9bcc2" stroke-width="0.35"/>
+<text x="40.35" y="40.099999999999994" font-size="2.2" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">=</text>
+<rect x="41.95" y="38.199999999999996" width="2.4" height="0.45" fill="#b9bcc2"/>
+<rect x="41.95" y="38.99999999999999" width="2.4" height="0.45" fill="#b9bcc2"/>
+<rect x="41.95" y="39.8" width="2.4" height="0.45" fill="#b9bcc2"/>
+<text x="-83.7" y="-43.7" font-size="2.2" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">1</text>
+<text x="-56.7" y="-43.7" font-size="2.2" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">2</text>
+<text x="56.7" y="-43.7" font-size="2.2" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">1</text>
+<text x="83.7" y="-43.7" font-size="2.2" text-anchor="middle" fill="#b9bcc2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">2</text>
+<text x="-70.2" y="-43.75" font-size="1.8" text-anchor="middle" fill="#b9bcc2" letter-spacing="0.2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">IN</text>
+<text x="70.2" y="-43.75" font-size="1.8" text-anchor="middle" fill="#b9bcc2" letter-spacing="0.2" font-family="DejaVu Sans, Segoe UI, Arial, sans-serif">OUT</text>
+</svg>

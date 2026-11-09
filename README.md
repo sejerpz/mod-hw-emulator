@@ -91,6 +91,13 @@ make gui            # needs Qt5 Widgets (pkg-config Qt5Widgets)
 build/mod-hw-emulator --tcp webgui=9900 build/fw-dwarf.so
 ```
 
+![The Dwarf skin](docs/gui-skin.png)
+
+The controls sit on a picture of the Dwarf panel, `devices/dwarf/skin/` (see [its README](devices/dwarf/skin/README.md)):
+the program looks for `DEVICE-panel.json` in `skins/DEVICE` next to it, then in `devices/DEVICE/skin` of the
+source tree. `--skin DIR` takes another one; `--simple` stacks the controls with no picture, the layout of
+devices with no skin. The window can be resized, the panel keeps its proportions.
+
 Wheel or drag on a knob turns it, a click pushes it; Q/A W/S E/D turn the knobs from the keyboard, 1 2 3
 push them, Z X C are the footswitches A B C, F1-F3 the subpage buttons I II III, F4 Shift (the menu).
 
@@ -105,7 +112,7 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 | `include/mhe/emu_module.h` | ABI between the host and a firmware module |
 | `lpc177x/` | LPC177x peripheral API emulation and the FreeRTOS host port |
 | `chips/` | models of the chips on the boards (ST7565P display controller) |
-| `devices/dwarf/` | Dwarf board: pins, panel, module entry |
+| `devices/dwarf/` | Dwarf board: pins, panel, module entry; `skin/` the panel picture of the user interface (CC BY 4.0) |
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
 | `patches/` | the mod-ui change the emulator needs (also on mod-ui branch `feature/mod-hw-emulator`) |
@@ -119,7 +126,9 @@ What it is built with:
 - the MOD Dwarf controller firmware (AGPLv3+), into the firmware module;
 - the FreeRTOS kernel that comes with the firmware (MIT); the host port in `lpc177x/` is part of this project;
 - `sys_host.c` of mod-system-control (AGPLv3+), into the runner and the user interface;
-- Qt5 (LGPLv3), dynamically linked by the user interface.
+- Qt5 (LGPLv3), dynamically linked by the user interface;
+- the Dwarf panel skin in `devices/dwarf/skin/` (CC BY 4.0), drawn from the MOD Dwarf exterior model by MOD Audio,
+  see [its README](devices/dwarf/skin/README.md).
 
 ## Use of AI
 
