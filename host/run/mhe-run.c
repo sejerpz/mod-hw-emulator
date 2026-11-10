@@ -6,6 +6,7 @@
  *
  *   mhe-run [--state DIR] [--tcp CHANNEL=PORT]... MODULE [COMMAND...]
  *
+ * --state names the state folder (EEPROM image, system settings); by default mhe-state/<tag of the firmware>.
  * --tcp exposes a serial channel on 127.0.0.1:PORT, e.g. --tcp webgui=9900 for mod-ui
  * (MOD_HMI_SERIAL_PORT=tcp://127.0.0.1:9900). The system and cli channels are answered by the emulated
  * mod-system-control and Linux console unless they are exposed.
@@ -42,10 +43,8 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <windows.h>
-#define mkdir_p(p) _mkdir(p)
 #else
 #include <sys/stat.h>
-#define mkdir_p(p) mkdir(p, 0755)
 #endif
 
 static const mhe_module *g_mod;
@@ -366,7 +365,8 @@ static void tcp_rx(void *ctx, const uint8_t *data, size_t size)
 
 int main(int argc, char **argv)
 {
-    const char *state_dir = "mhe-state";
+    const char *state_dir = NULL;
+    char default_state[512];
     const char *tcp_specs[MAX_CHANNELS];
     int n_tcp = 0;
     int arg = 1;
@@ -391,7 +391,15 @@ int main(int argc, char **argv)
     timeBeginPeriod(1);
 #endif
     setvbuf(stdout, NULL, _IOLBF, 0);
-    mkdir_p(state_dir);
+
+    /* each firmware tag keeps its own state, the EEPROM layout may change between them */
+    const mhe_fw_info *fw = mhe_module_info(argv[arg]);
+    if (! state_dir)
+    {
+        mhe_default_state_dir("mhe-state", fw, default_state, sizeof(default_state));
+        state_dir = default_state;
+    }
+    mhe_mkdir_p(state_dir);
 
     static mhe_host host = {
         .size = sizeof(mhe_host),
@@ -411,6 +419,8 @@ int main(int argc, char **argv)
     }
 
     printf("device %s, firmware %s\n", g_mod->device, g_mod->firmware);
+    if (fw)
+        printf("firmware sources %s, commit %s of %s; state in %s\n", fw->describe, fw->commit, fw->date, state_dir);
 
     for (size_t i = 0; i < g_mod->n_serials; ++i)
     {

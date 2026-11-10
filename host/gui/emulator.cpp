@@ -14,20 +14,10 @@ extern "C" {
 #include <cstdio>
 #include <cstring>
 
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <sys/stat.h>
-#endif
-
 Emulator::Emulator(Listener &listener, std::string stateDir)
     : m_listener(listener), m_stateDir(std::move(stateDir))
 {
-#ifdef _WIN32
-    _mkdir(m_stateDir.c_str());
-#else
-    mkdir(m_stateDir.c_str(), 0755);
-#endif
+    mhe_mkdir_p(m_stateDir.c_str());
     m_host.size = sizeof(mhe_host);
     m_host.handle = this;
     m_host.log = hostLog;

@@ -280,7 +280,7 @@ static int board_start(void)
     if (pthread_create(&housekeeping, NULL, housekeeping_thread, NULL) == 0)
         pthread_detach(housekeeping);
 
-    emu_log(MHE_LOG_INFO, "dwarf firmware %s started", VERSION_HASH);
+    emu_log(MHE_LOG_INFO, "dwarf firmware %s (%s) started", MHE_FW_DESCRIBE, VERSION_HASH);
     return 0;
 }
 
@@ -323,6 +323,16 @@ static void board_serial_rx(uint8_t channel, const uint8_t *data, size_t size)
     emu_uart_rx(channel, data, size);
 }
 
+/* the git description of the firmware sources, given by the Makefile */
+static const mhe_fw_info g_firmware_info = {
+    .size = sizeof(mhe_fw_info),
+    .device = "dwarf",
+    .describe = MHE_FW_DESCRIBE,
+    .tag = MHE_FW_TAG,
+    .commit = MHE_FW_COMMIT,
+    .date = MHE_FW_DATE,
+};
+
 static const mhe_module g_module = {
     .size = sizeof(mhe_module),
     .device = "dwarf",
@@ -337,7 +347,13 @@ static const mhe_module g_module = {
     .input_press = board_input_press,
     .pot_value = board_pot_value,
     .serial_rx = board_serial_rx,
+    .info = &g_firmware_info,
 };
+
+EXPORT const mhe_fw_info *mhe_firmware_info(void)
+{
+    return &g_firmware_info;
+}
 
 EXPORT const mhe_module *mhe_module_entry(const mhe_host *host)
 {

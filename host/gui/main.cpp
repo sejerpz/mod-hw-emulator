@@ -5,6 +5,9 @@
  *
  *   mod-hw-emulator [--skin DIR | --simple] ...
  *
+ * --state names the state folder; by default mhe-state/<tag of the firmware>. The Firmware menu restarts on
+ * another build of the same device found next to MODULE.
+ *
  * The panel is built from what the module declares (displays, encoders, buttons, footswitches, leds). With
  * a skin of the device (a picture and the rectangle of each control, see findSkin) SkinLayout puts them on
  * the picture; without one, or with --simple, SimpleLayout stacks them: display on top, encoders below it,
@@ -17,6 +20,7 @@
 
 #include "controls.h"
 #include "emulator.h"
+#include "../common/module_loader.h"
 
 #include <QApplication>
 #include <QBoxLayout>
@@ -28,7 +32,10 @@
 #include <QJsonObject>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QMenu>
+#include <QMenuBar>
 #include <QMessageBox>
+#include <QProcess>
 #include <QStatusBar>
 #include <QMainWindow>
 #include <QThread>
@@ -116,7 +123,9 @@ public:
         : m_emulator(*this, stateDir.toStdString())
     {
         setWindowTitle(QStringLiteral("mod-hw-emulator"));
-        setStyleSheet(QStringLiteral("QMainWindow { background: #26282c; } QStatusBar { color: #9aa; }"));
+        setStyleSheet(QStringLiteral("QMainWindow { background: #26282c; } QStatusBar { color: #9aa; } "
+                                     "QMenuBar { background: #26282c; color: #ccd; } "
+                                     "QMenuBar::item:selected { background: #3a3d42; }"));
     }
 
     Emulator &emulator() { return m_emulator; }
@@ -125,7 +134,9 @@ public:
     void build(const Skin &skin)
     {
         const mhe_module *m = m_emulator.module();
-        setWindowTitle(QStringLiteral("mod-hw-emulator — %1 (%2)").arg(m->device, m->firmware));
+        const mhe_fw_info *fw = mhe_module_firmware(m);
+        setWindowTitle(fw ? QStringLiteral("mod-hw-emulator — %1 %2 (%3)").arg(m->device, fw->describe, fw->date)
+                          : QStringLiteral("mod-hw-emulator — %1 (%2)").arg(m->device, m->firmware));
 
         const bool skinned = ! skin.picture.isNull();
         PanelWidget *panel = skinned ? new PanelWidget(skin.picture, this) : nullptr;
@@ -280,7 +291,36 @@ public:
 
         /* the picture at its nominal size */
         const QSize size = skin.picture.size() / skin.scale;
-        resize(size.width(), size.height() + statusBar()->sizeHint().height());
+        resize(size.width(), size.height() + statusBar()->sizeHint().height() +
+                             (menuWidget() ? menuWidget()->sizeHint().height() : 0));
+    }
+
+    /* Firmware menu: the builds of the same device next to the module (fw-dwarf-<describe>.so, see the
+     * Makefile), newest first; a module cannot start twice in a process, so choosing one calls `choose`,
+     * which starts a new process on it */
+    void firmwareMenu(const QString &modulePath, const QString &device, std::function<void(const QString &)> choose)
+    {
+        const QFileInfo current(modulePath);
+        const QString prefix = QStringLiteral("fw-%1-").arg(device);
+        const QString suffix = QLatin1Char('.') + current.suffix();
+        const QFileInfoList builds = current.absoluteDir().entryInfoList(
+            QStringList(prefix + QLatin1Char('*') + suffix), QDir::Files, QDir::Time);
+
+        QMenu *menu = menuBar()->addMenu(QStringLiteral("&Firmware"));
+        for (const QFileInfo &build : builds)
+        {
+            const QString name = build.fileName().mid(prefix.size()).chopped(suffix.size());
+            QAction *action = menu->addAction(name);
+            action->setCheckable(true);
+            const bool running = build.canonicalFilePath() == current.canonicalFilePath();
+            action->setChecked(running);
+            if (running)
+                action->setEnabled(false);
+            const QString path = build.absoluteFilePath();
+            connect(action, &QAction::triggered, this, [choose, path]() { choose(path); });
+        }
+        if (builds.isEmpty())
+            menu->addAction(QStringLiteral("no %1*%2 next to the module").arg(prefix, suffix))->setEnabled(false);
     }
 
     /* ---- Emulator::Listener, on emulator threads: hand over to the GUI thread ---- */
@@ -461,9 +501,10 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    QString stateDir = QStringLiteral("mhe-state");
+    QString stateDir;
     QStringList tcp;
     QString modulePath;
+    int moduleArg = -1;
     QString screenshot;
     int screenshotAfter = 3000;
     QString skinDir;
@@ -485,13 +526,24 @@ int main(int argc, char **argv)
         else if (args[i] == QLatin1String("--after") && i + 1 < args.size())
             screenshotAfter = args[++i].toInt();
         else
+        {
             modulePath = args[i];
+            moduleArg = i;
+        }
     }
 
     if (modulePath.isEmpty())
     {
         fprintf(stderr, "usage: mod-hw-emulator [--state DIR] [--tcp CHANNEL=PORT]... [--skin DIR | --simple] MODULE\n");
         return 2;
+    }
+
+    /* each firmware tag keeps its own state, the EEPROM layout may change between them */
+    if (stateDir.isEmpty())
+    {
+        char dir[512];
+        mhe_default_state_dir("mhe-state", mhe_module_info(qPrintable(modulePath)), dir, sizeof(dir));
+        stateDir = QString::fromLocal8Bit(dir);
     }
 
     Window window(stateDir);
@@ -510,10 +562,17 @@ int main(int argc, char **argv)
         }
     }
 
+    /* the same arguments on another firmware build, started once this process has let go of its ports */
+    const QString device = QString::fromUtf8(window.emulator().module()->device);
+    QString nextModule;
+    window.firmwareMenu(modulePath, device, [&nextModule](const QString &path) {
+        nextModule = path;
+        QApplication::quit();
+    });
+
     Skin skin;
     if (! simple)
     {
-        const QString device = QString::fromUtf8(window.emulator().module()->device);
         const bool found = skinDir.isEmpty() ? findSkin(modulePath, device, skin) : loadSkin(skinDir, device, skin);
         if (! found && ! skinDir.isEmpty())
             fprintf(stderr, "skin: none for %s in %s\n", qPrintable(device), qPrintable(skinDir));
@@ -538,6 +597,13 @@ int main(int argc, char **argv)
 
     const int rc = app.exec();
     window.emulator().stop();
+    if (! nextModule.isEmpty())
+    {
+        QStringList next = args.mid(1);
+        next[moduleArg - 1] = nextModule;
+        if (! QProcess::startDetached(QCoreApplication::applicationFilePath(), next))
+            fprintf(stderr, "cannot start %s\n", qPrintable(QCoreApplication::applicationFilePath()));
+    }
     /* the firmware tasks are parked, not joined */
     fflush(stdout);
     _Exit(rc);
