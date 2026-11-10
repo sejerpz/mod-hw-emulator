@@ -12,8 +12,11 @@
 #   src/PawPaw/bootstrap-mod.sh win64
 #
 # so mod-host links the same jack and lilv as the MOD Desktop it goes in. MOD_HOST is a mod-host checkout on
-# branch feature/mod-hw-emulator (sys_serial_tcp.h); mod-ui's hmi.py is the one of MOD_DESKTOP with
-# patches/mod-ui/0001-hmi-tcp-transport.patch. OUT is the zip, mod-hw-emulator-win64.zip by default.
+# branch feature/mod-hw-emulator (sys_serial_tcp.h); mod-ui's files are the ones of MOD_DESKTOP with
+# patches/mod-ui/*.patch. OUT is the zip, mod-hw-emulator-win64.zip by default.
+#
+# mod-desktop-overlay/ in the package holds the files at their place in the installation, and base-sha256.txt
+# the hash of the mod-ui files they replace, so mhe-desktop can tell a MOD Desktop they were not made for.
 
 set -e
 
@@ -27,7 +30,7 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 PKG=$STAGE/mod-hw-emulator
 OVL=$PKG/mod-desktop-overlay
-mkdir -p "$OVL" "$PKG/skins" "$PKG/devices/dwarf" "$PKG/platforms"
+mkdir -p "$OVL/jack" "$PKG/skins" "$PKG/devices/dwarf" "$PKG/platforms"
 
 # mod-host, built as MOD Desktop builds its own plus the HMI control
 cp -a "$MOD_HOST" "$STAGE/mod-host"
@@ -37,13 +40,19 @@ if [ -f "$MOD_DESKTOP/patches/mod-host.patch" ] && patch -s -p1 --dry-run -d "$S
 fi
 $RUN make -C "$STAGE/mod-host" clean > /dev/null
 $RUN make -C "$STAGE/mod-host" MOD_DESKTOP=1 MOD_HMI_EMULATOR=1 SKIP_READLINE=1 SKIP_FFTW335=1 WINDOWS=true mod-host.so
-cp "$STAGE/mod-host/mod-host.so" "$OVL/mod-host.dll"
+cp "$STAGE/mod-host/mod-host.so" "$OVL/jack/mod-host.dll"
 
-# mod-ui's HMI line over TCP, on the hmi.py of this MOD Desktop
-cp "$MOD_DESKTOP/src/mod-ui/mod/hmi.py" "$STAGE/hmi.py"
-sha256sum "$STAGE/hmi.py" | cut -d' ' -f1 | tr a-f A-F > "$OVL/hmi.py.base-sha256"
-patch -s "$STAGE/hmi.py" < "$EMU/patches/mod-ui/0001-hmi-tcp-transport.patch"
-cp "$STAGE/hmi.py" "$OVL/hmi.py"
+# mod-ui of this MOD Desktop with the patches: the HMI line over TCP, hardware addressing with actuators
+cp -a "$MOD_DESKTOP/src/mod-ui" "$STAGE/mod-ui"
+for p in "$EMU"/patches/mod-ui/*.patch; do
+    patch -s -p1 -d "$STAGE/mod-ui" < "$p"
+done
+: > "$OVL/base-sha256.txt"
+for f in $(cd "$STAGE/mod-ui" && cat "$EMU"/patches/mod-ui/*.patch | awk '/^\+\+\+ b\// { print substr($2, 3) }' | sort -u); do
+    mkdir -p "$OVL/$(dirname "$f")"
+    cp "$STAGE/mod-ui/$f" "$OVL/$f"
+    echo "$(sha256sum "$MOD_DESKTOP/src/mod-ui/$f" | cut -d' ' -f1 | tr a-f A-F) $f" >> "$OVL/base-sha256.txt"
+done
 
 # the emulator, with the Qt of MOD Desktop
 $RUN make -C "$EMU" BUILD=build-win64 all gui
@@ -56,7 +65,7 @@ done
 cp "$PREFIX"/plugins/platforms/qwindows.dll "$PKG/platforms/" 2> /dev/null \
     || cp "$MOD_DESKTOP"/build/platforms/qwindows.dll "$PKG/platforms/"
 # whatever else the programs need from the toolchain (winpthread, the GCC runtimes when not static)
-for dll in $(x86_64-w64-mingw32-objdump -p "$PKG"/*.exe "$PKG"/*.dll "$PKG"/platforms/*.dll "$OVL"/*.dll \
+for dll in $(x86_64-w64-mingw32-objdump -p "$PKG"/*.exe "$PKG"/*.dll "$PKG"/platforms/*.dll "$OVL"/jack/*.dll \
              | awk '/DLL Name/ { print $3 }' | sort -u); do
     [ -e "$PKG/$dll" ] && continue
     for dir in "$PREFIX/bin" "$PREFIX/lib" /usr/x86_64-w64-mingw32/lib /usr/lib/gcc/x86_64-w64-mingw32/*-posix; do

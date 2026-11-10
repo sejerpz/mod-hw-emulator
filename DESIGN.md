@@ -147,11 +147,12 @@ pot values; their LPC/ADC and display controller models are added when their fir
 - **Delivery without rebuilding mod-desktop**: mod-host is a single JACK internal client
   (`jack/mod-host.(dll|so)`), mod-ui's `mod` package is a plain folder next to the frozen executable, and the
   launcher passes its environment to jackd and mod-ui. `mhe-desktop` (Windows: `scripts/mhe-desktop.ps1`)
-  keeps a copy of the installation (the user data is in the user's folders, shared), lays mod-host, `hmi.py`
-  and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
+  keeps a copy of the installation (the user data is in the user's folders, shared), lays mod-host, `hmi.py`,
+  the addressing dialog (MOD Desktop locks its Device tab and shows a card for the hardware; with actuators in the
+  descriptor it stays open) and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
   then the copy. The files are built for one mod-desktop release (`scripts/package-win64.sh`, in mod-desktop's
   CI container with its PawPaw), so mod-host links the jack and lilv it is loaded with; mod-ui stays the
-  release's own but for `hmi.py`.
+  release's own but for the files `patches/mod-ui` changes, whose originals are checked by hash.
 
 ## Milestones
 

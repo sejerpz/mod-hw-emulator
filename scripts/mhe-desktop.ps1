@@ -3,11 +3,15 @@
 #   mhe-desktop.cmd [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh]
 #
 # MOD Desktop stays as it is installed. This keeps a copy of it in -Overlay (by default
-# %LOCALAPPDATA%\mod-hw-emulator\mod-desktop, refreshed when the installed files change) with three files changed:
+# %LOCALAPPDATA%\mod-hw-emulator\mod-desktop, refreshed when the installed files change) with these files changed:
 #
 #   jack\mod-host.dll            mod-host with the HMI control (MOD_HMI_EMULATOR), messages over TCP
 #   mod\hmi.py                   mod-ui's HMI line over TCP as well as over a serial port
+#   html\js\hardware.js,         hardware addressing (the Device tab) open, as the descriptor has actuators
+#   html\js\desktop-app.js
 #   mod-hardware-descriptor.json MOD Desktop's descriptor with the Dwarf actuators and HMI options
+#
+# (all but the descriptor are in mod-desktop-overlay, at their place in the installation)
 #
 # then starts the emulator (unless -NoEmulator: one already running) and the copy of MOD Desktop, which talk to
 # each other over 127.0.0.1: 9900 for mod-ui's HMI line, 9901 for mod-host's /sys_msgs. The user data (pedalboards,
@@ -30,11 +34,13 @@ if (-not (Test-Path (Join-Path $ModDesktop 'mod-desktop.exe'))) {
     throw "no MOD Desktop in '$ModDesktop': install it, or give its folder with -ModDesktop"
 }
 
-# the overlay is made for one mod-ui: check that the installed hmi.py is the one it changes
-$installedHmi = (Get-FileHash (Join-Path $ModDesktop 'mod\hmi.py') -Algorithm SHA256).Hash
-$expectedHmi = (Get-Content (Join-Path $files 'hmi.py.base-sha256') -TotalCount 1).Trim()
-if ($installedHmi -ne $expectedHmi) {
-    Write-Warning "this MOD Desktop's mod\hmi.py is not the one the overlay was made for: mod-ui may not start"
+# the overlay is made for one mod-ui: check that the installed files are the ones it changes
+foreach ($line in Get-Content (Join-Path $files 'base-sha256.txt')) {
+    $hash, $path = $line.Trim() -split ' ', 2
+    $installed = Join-Path $ModDesktop $path
+    if (-not (Test-Path $installed) -or (Get-FileHash $installed -Algorithm SHA256).Hash -ne $hash) {
+        Write-Warning "this MOD Desktop's $path is not the one the overlay was made for: mod-ui may not work"
+    }
 }
 
 # copy of the installation: robocopy copies only what changed since the last time
@@ -47,8 +53,10 @@ if ($LASTEXITCODE -ge 8) {
     throw "copying '$ModDesktop' to '$Overlay' failed (robocopy $LASTEXITCODE)"
 }
 
-Copy-Item -Force (Join-Path $files 'mod-host.dll') (Join-Path $Overlay 'jack\mod-host.dll')
-Copy-Item -Force (Join-Path $files 'hmi.py') (Join-Path $Overlay 'mod\hmi.py')
+robocopy $files $Overlay /E /XF base-sha256.txt /NFL /NDL /NJH /NJS /NP /R:1 /W:1 | Out-Null
+if ($LASTEXITCODE -ge 8) {
+    throw "laying '$files' over '$Overlay' failed (robocopy $LASTEXITCODE)"
+}
 
 # MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the Dwarf one gives the rest
 $desktop = Get-Content -Raw (Join-Path $ModDesktop 'mod-hardware-descriptor.json') | ConvertFrom-Json

@@ -111,7 +111,8 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 
 The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
 installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
-the TCP line, a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
+the TCP line and its addressing dialog with the Device tab open
+([patches/mod-ui](patches/mod-ui)), a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
 of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
 plugins and settings are the usual ones; quit the installed MOD Desktop first.
 
@@ -132,7 +133,7 @@ mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top
 | `devices/dwarf/` | Dwarf board: pins, panel, module entry; `skin/` the panel picture of the user interface (CC BY 4.0) |
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
-| `patches/` | the mod-ui change the emulator needs (also on mod-ui branch `feature/mod-hw-emulator`) |
+| `patches/` | the mod-ui changes the emulator needs: the TCP HMI line (also on mod-ui branch `feature/mod-hw-emulator`), hardware addressing on MOD Desktop when the descriptor has actuators |
 
 ## License
 
