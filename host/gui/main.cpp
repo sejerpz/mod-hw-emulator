@@ -244,7 +244,7 @@ public:
         resize(sizeHint().expandedTo(QSize(620, 860)));
     }
 
-    /* SkinLayout: every control on the rectangle of the same name; the display on "display" */
+    /* SkinLayout: every control on the rectangle of the same name; the display on "display_window" */
     void skinLayout(PanelWidget &panel, const Skin &skin)
     {
         for (const auto &named : m_byName)
@@ -263,12 +263,15 @@ public:
             panel.place(named.second, spot->second);
         }
 
-        /* one display for now: the first one goes on "display", any other on "display N" */
+        /* one display for now: the first one goes on "display", any other on "display N"; it takes the whole
+         * window around it ("display_window"), so the glass shows no frame of the picture */
         int n = 0;
         for (const auto &lcd : m_lcds)
         {
             const QString name = n++ ? QStringLiteral("display %1").arg(n) : QStringLiteral("display");
-            auto spot = skin.rects.find(name);
+            auto spot = skin.rects.find(name + QStringLiteral("_window"));
+            if (spot == skin.rects.end())
+                spot = skin.rects.find(name);
             if (spot == skin.rects.end())
             {
                 lcd.second->hide();
