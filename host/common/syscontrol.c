@@ -154,9 +154,11 @@ static int arity(const char *cmd)
 
 #ifdef MHE_WITH_SYS_HOST
 #include "sys_host.h"
+#ifndef _WIN32
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#endif
 #endif
 
 /* answers a "sys_*" command of the controller */
@@ -405,15 +407,26 @@ mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, con
     g_sc = sc;
 
 #ifdef MHE_WITH_SYS_HOST
-    /* creates /sys_msgs: mod-host must start after it. MHE_NO_SYS_HOST=1 leaves it alone (a second emulator
+    /* creates /sys_msgs, or listens on MOD_SYS_SERIAL_PORT (tcp://HOST:PORT; on Windows always, by default
+     * 127.0.0.1:9901): mod-host must start after it. MHE_NO_SYS_HOST=1 leaves it alone (a second emulator
      * running next to one mod-host is talking to, a test) */
     if (! getenv("MHE_NO_SYS_HOST"))
     {
         sys_host_setup(debug != 0);
-        const int fd = shm_open("/sys_msgs", O_RDWR, 0);
-        sc->has_host = fd >= 0;
-        if (fd >= 0)
-            close(fd);
+#ifdef _WIN32
+        sc->has_host = 1;
+#else
+        const char *tcp = getenv("MOD_SYS_SERIAL_PORT");
+        if (tcp && *tcp)
+            sc->has_host = 1;
+        else
+        {
+            const int fd = shm_open("/sys_msgs", O_RDWR, 0);
+            sc->has_host = fd >= 0;
+            if (fd >= 0)
+                close(fd);
+        }
+#endif
     }
 #endif
 

@@ -37,13 +37,11 @@ COMMON_CFLAGS += -fvisibility=hidden
 endif
 
 # mod-system-control: its sys_host.c (the mod-host side: labels, leds, widget bitmaps through /sys_msgs) is
-# built into the hosts when the checkout is there; POSIX shared memory, so not on Windows yet
+# built into the hosts when the checkout is there; over TCP on Windows (MOD_SYS_SERIAL_PORT)
 MSC ?= ../mod-system-control
-ifneq ($(WINDOWS),true)
 ifneq (,$(wildcard $(MSC)/src/sys_host.c))
 SYS_HOST_SRC    = $(MSC)/src/sys_host.c
 SYS_HOST_CFLAGS = -DMHE_WITH_SYS_HOST -D_MOD_DEVICE_DWARF -Ihost/common/msc-shim -I$(MSC)/src
-endif
 endif
 
 all: $(BUILD)/fw-dwarf$(SO_EXT) $(BUILD)/mhe-run$(EXE_EXT)

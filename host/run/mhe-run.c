@@ -443,7 +443,14 @@ int main(int argc, char **argv)
     {
         g_sys = mhe_syscontrol_create(sys_reply, NULL, state_dir, getenv("MHE_SYS_DEBUG") != NULL);
         if (mhe_syscontrol_has_host(g_sys))
-            printf("system-control: /sys_msgs ready, start mod-host now\n");
+        {
+            const char *tcp = getenv("MOD_SYS_SERIAL_PORT");
+#ifdef _WIN32
+            if (! tcp || ! *tcp)
+                tcp = "tcp://127.0.0.1:9901";
+#endif
+            printf("system-control: /sys_msgs ready (%s), start mod-host now\n", tcp && *tcp ? tcp : "shared memory");
+        }
     }
     if (g_mod->start() != 0)
     {
