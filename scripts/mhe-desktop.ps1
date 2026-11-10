@@ -1,0 +1,99 @@
+# mod-hw-emulator - runs MOD Desktop with the emulated Dwarf as its controller (Windows)
+#
+#   mhe-desktop.cmd [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh]
+#
+# MOD Desktop stays as it is installed. This keeps a copy of it in -Overlay (by default
+# %LOCALAPPDATA%\mod-hw-emulator\mod-desktop, refreshed when the installed files change) with three files changed:
+#
+#   jack\mod-host.dll            mod-host with the HMI control (MOD_HMI_EMULATOR), messages over TCP
+#   mod\hmi.py                   mod-ui's HMI line over TCP as well as over a serial port
+#   mod-hardware-descriptor.json MOD Desktop's descriptor with the Dwarf actuators and HMI options
+#
+# then starts the emulator (unless -NoEmulator: one already running) and the copy of MOD Desktop, which talk to
+# each other over 127.0.0.1: 9900 for mod-ui's HMI line, 9901 for mod-host's /sys_msgs. The user data (pedalboards,
+# plugins, settings in Documents\MOD Desktop) is the same as with the installed MOD Desktop: quit that one first.
+
+param(
+    [string]$ModDesktop = "$env:ProgramFiles\MOD Desktop",
+    [string]$Overlay = "$env:LOCALAPPDATA\mod-hw-emulator\mod-desktop",
+    [switch]$NoEmulator,
+    [switch]$Refresh
+)
+
+$ErrorActionPreference = 'Stop'
+$here = Split-Path -Parent $MyInvocation.MyCommand.Path
+$files = Join-Path $here 'mod-desktop-overlay'
+$hmiPort = 9900
+$sysPort = 9901
+
+if (-not (Test-Path (Join-Path $ModDesktop 'mod-desktop.exe'))) {
+    throw "no MOD Desktop in '$ModDesktop': install it, or give its folder with -ModDesktop"
+}
+
+# the overlay is made for one mod-ui: check that the installed hmi.py is the one it changes
+$installedHmi = (Get-FileHash (Join-Path $ModDesktop 'mod\hmi.py') -Algorithm SHA256).Hash
+$expectedHmi = (Get-Content (Join-Path $files 'hmi.py.base-sha256') -TotalCount 1).Trim()
+if ($installedHmi -ne $expectedHmi) {
+    Write-Warning "this MOD Desktop's mod\hmi.py is not the one the overlay was made for: mod-ui may not start"
+}
+
+# copy of the installation: robocopy copies only what changed since the last time
+if ($Refresh -and (Test-Path $Overlay)) {
+    Remove-Item -Recurse -Force $Overlay
+}
+New-Item -ItemType Directory -Force $Overlay | Out-Null
+robocopy $ModDesktop $Overlay /MIR /NFL /NDL /NJH /NJS /NP /R:1 /W:1 | Out-Null
+if ($LASTEXITCODE -ge 8) {
+    throw "copying '$ModDesktop' to '$Overlay' failed (robocopy $LASTEXITCODE)"
+}
+
+Copy-Item -Force (Join-Path $files 'mod-host.dll') (Join-Path $Overlay 'jack\mod-host.dll')
+Copy-Item -Force (Join-Path $files 'hmi.py') (Join-Path $Overlay 'mod\hmi.py')
+
+# MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the Dwarf one gives the rest
+$desktop = Get-Content -Raw (Join-Path $ModDesktop 'mod-hardware-descriptor.json') | ConvertFrom-Json
+$dwarf = Get-Content -Raw (Join-Path $here 'devices\dwarf\mod-hardware-descriptor.json') | ConvertFrom-Json
+foreach ($key in 'name', 'architecture', 'bin-compat') {
+    if ($desktop.PSObject.Properties[$key]) {
+        $dwarf.$key = $desktop.$key
+    }
+}
+$json = $dwarf | ConvertTo-Json -Depth 20
+[IO.File]::WriteAllText((Join-Path $Overlay 'mod-hardware-descriptor.json'), $json, (New-Object Text.UTF8Encoding $false))
+
+function Test-Listening([int]$port) {
+    $client = New-Object Net.Sockets.TcpClient
+    try {
+        $client.Connect('127.0.0.1', $port)
+        return $true
+    } catch {
+        return $false
+    } finally {
+        $client.Close()
+    }
+}
+
+# the emulator first: mod-host connects to it when it starts
+if (-not $NoEmulator) {
+    if (Test-Listening $sysPort) {
+        Write-Host "something is already on port ${sysPort}: an emulator running? (-NoEmulator to use it)"
+        exit 1
+    }
+    Start-Process -FilePath (Join-Path $here 'mod-hw-emulator.exe') `
+                  -ArgumentList '--tcp', "webgui=$hmiPort", (Join-Path $here 'fw-dwarf.dll') `
+                  -WorkingDirectory $here
+}
+$deadline = (Get-Date).AddSeconds(15)
+while (-not (Test-Listening $sysPort)) {
+    if ((Get-Date) -gt $deadline) {
+        throw "the emulator is not listening on port $sysPort"
+    }
+    Start-Sleep -Milliseconds 250
+}
+
+# MOD Desktop passes its environment to jackd (mod-host) and mod-ui
+$env:MOD_HMI_SERIAL_PORT = "tcp://127.0.0.1:$hmiPort"
+$env:MOD_SYS_SERIAL_PORT = "tcp://127.0.0.1:$sysPort"
+$env:MOD_DEV_HMI = '0'
+Start-Process -FilePath (Join-Path $Overlay 'mod-desktop.exe') -WorkingDirectory $Overlay
+Write-Host "MOD Desktop (copy in $Overlay) started with the emulated Dwarf"

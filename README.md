@@ -59,7 +59,9 @@ On the device mod-host hands the widget bitmaps to mod-system-control through th
 memory. The emulator builds mod-system-control's `sys_host.c` from `../mod-system-control` (branch
 `feature/hmi-widgets`) and creates `/sys_msgs` itself. mod-host opens it only as a JACK internal client, as
 on the device and in mod-desktop, and only when built with `make MOD_HMI_EMULATOR=1` (`../mod-host`,
-branch `feature/mod-hw-emulator`). Three terminals, in this order:
+branch `feature/mod-hw-emulator`). With `MOD_SYS_SERIAL_PORT=tcp://127.0.0.1:9901` in the environment of both,
+the emulator listens there and mod-host connects, in place of the shared memory; on Windows it is the only way
+and the default. Three terminals, in this order:
 
 ```sh
 build/mod-hw-emulator --tcp webgui=9900 build/fw-dwarf.so      # or build/mhe-run, same options
@@ -104,6 +106,21 @@ push them, Z X C are the footswitches A B C, F1-F3 the subpage buttons I II III,
 Two footswitches together (B+C for the pedalboard and bank navigation, A+B for the tool mode): press both keys
 at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click the other one. `mhe-run` has
 `chord footswitchb footswitchc`.
+
+## On Windows, with MOD Desktop
+
+The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
+installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
+the TCP line, a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
+of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
+plugins and settings are the usual ones; quit the installed MOD Desktop first.
+
+```bat
+mhe-desktop.cmd                      :: -ModDesktop DIR if it is not in Program Files
+```
+
+The package is built in mod-desktop's CI container (ubuntu:22.04) with mod-desktop's PawPaw for win64, so
+mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top of the script.
 
 ## Layout
 
