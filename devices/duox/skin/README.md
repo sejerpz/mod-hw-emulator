@@ -22,8 +22,10 @@ Rectangles:
 - `Button 1..4`, the buttons under the knobs;
 - `LED <button>` for each of the seven buttons (a dot above it), and `LED Output 1/2`, `LED Input 1/2`.
 
-The names follow the firmware's own ("ENDLESS KNOB", "KNOB", "BUTTON"). The Duo X device profile (`board.c`) is
-not written yet: when it is, its inputs and LEDs take these names, or the JSON is renamed to match.
+The names follow the firmware's own ("ENDLESS KNOB", "KNOB", "BUTTON"), and the inputs and LEDs of the Duo X
+device profile (`../board.c`) take them. `square` lists `Button 1..4`: footswitches for the firmware, they are
+square buttons on the panel, and the user interface shades a pressed one as a square. `LED Input/Output 1/2`
+have no led in the device profile yet, they stay off.
 
 The picture draws every control (knobs, buttons, LEDs off, display glass), so it reads on its own; the widgets
 are laid over their rectangles. It carries no MOD logo.

@@ -90,7 +90,8 @@ bool Emulator::start()
     if (m_cliChannel >= 0 && ! m_tcp.count(static_cast<uint8_t>(m_cliChannel)))
         m_console = mhe_console_create(consoleReply, this);
     if (m_systemChannel >= 0 && ! m_tcp.count(static_cast<uint8_t>(m_systemChannel)))
-        m_sys = mhe_syscontrol_create(sysReply, this, m_stateDir.c_str(), std::getenv("MHE_SYS_DEBUG") != nullptr);
+        m_sys = mhe_syscontrol_create(sysReply, this, m_stateDir.c_str(), m_module->device,
+                                       std::getenv("MHE_SYS_DEBUG") != nullptr);
 
     if (m_module->start() != 0)
         return false;

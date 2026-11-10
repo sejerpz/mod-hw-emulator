@@ -1,5 +1,5 @@
 /*
- * mod-hw-emulator — ST7565P display controller model
+ * mod-hw-emulator — ST7565P display controller model (and the UC1701, same command set, on SPI)
  */
 
 #include "chip_st7565p.h"
@@ -13,7 +13,9 @@
 #define RAM_COLUMNS 132
 
 struct st7565p_chip {
-    st7565p_bus bus;
+    st7565p_bus bus;            /* 8080 bus */
+    st7565p_spi_bus spi;        /* SPI bus */
+    uint8_t rst_port, rst_pin;
     uint16_t width, height;
     pthread_mutex_t mutex;
 
@@ -105,7 +107,7 @@ static void on_rst(void *ctx, uint8_t port, uint32_t changed, uint32_t value)
 {
     st7565p_chip *c = ctx;
     (void)port;
-    const uint32_t rst = 1u << c->bus.rst_pin;
+    const uint32_t rst = 1u << c->rst_pin;
     if ((changed & rst) && ! (value & rst))
     {
         pthread_mutex_lock(&c->mutex);
@@ -114,21 +116,59 @@ static void on_rst(void *ctx, uint8_t port, uint32_t changed, uint32_t value)
     }
 }
 
-st7565p_chip *st7565p_chip_create(const st7565p_bus *bus, uint16_t width, uint16_t height)
+/* SPI: a byte for the chip when its /CS is low; CD high is data */
+static void on_spi(void *ctx, uint16_t frame)
+{
+    st7565p_chip *c = ctx;
+
+    if ((emu_gpio_get(c->spi.cs_port) >> c->spi.cs_pin) & 1)
+        return; /* not selected */
+
+    const int is_data = (emu_gpio_get(c->spi.cd_port) >> c->spi.cd_pin) & 1;
+
+    pthread_mutex_lock(&c->mutex);
+    if (is_data)
+        data(c, (uint8_t)frame);
+    else
+        command(c, (uint8_t)frame);
+    pthread_mutex_unlock(&c->mutex);
+}
+
+static st7565p_chip *create(uint8_t rst_port, uint8_t rst_pin, uint16_t width, uint16_t height)
 {
     st7565p_chip *c = calloc(1, sizeof(*c));
     if (! c)
         return NULL;
 
-    c->bus = *bus;
+    c->rst_port = rst_port;
+    c->rst_pin = rst_pin;
     c->width = width;
     c->height = height;
     c->rendered_serial = (uint32_t)-1;
     pthread_mutex_init(&c->mutex, NULL);
     reset(c);
 
+    emu_gpio_listen(rst_port, 1u << rst_pin, on_rst, c);
+    return c;
+}
+
+st7565p_chip *st7565p_chip_create(const st7565p_bus *bus, uint16_t width, uint16_t height)
+{
+    st7565p_chip *c = create(bus->rst_port, bus->rst_pin, width, height);
+    if (! c)
+        return NULL;
+    c->bus = *bus;
     emu_gpio_listen(bus->wr_port, 1u << bus->wr_pin, on_wr, c);
-    emu_gpio_listen(bus->rst_port, 1u << bus->rst_pin, on_rst, c);
+    return c;
+}
+
+st7565p_chip *st7565p_chip_create_spi(const st7565p_spi_bus *bus, uint16_t width, uint16_t height)
+{
+    st7565p_chip *c = create(bus->rst_port, bus->rst_pin, width, height);
+    if (! c)
+        return NULL;
+    c->spi = *bus;
+    emu_ssp_listen(bus->ssp, on_spi, c);
     return c;
 }
 

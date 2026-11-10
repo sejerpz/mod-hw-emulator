@@ -35,6 +35,7 @@ struct mhe_syscontrol {
     char state_file[1100];
     int debug;
     int has_host;
+    const struct sys_host_ops *host;   /* sys_host.c of the device, with MHE_WITH_SYS_HOST */
 
     /* values the controller set */
     pthread_mutex_t values_mutex;
@@ -159,6 +160,38 @@ static int arity(const char *cmd)
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
+
+/* sys_host.c is built once per device, its functions renamed (msc-shim/sys_host_device.h) */
+struct sys_host_ops {
+    const char *device;
+    void (*setup)(bool debug);
+    void (*process)(struct sp_port *serialport);
+    void (*destroy)(void);
+    void (*set_hmi_page)(int page);
+    void (*set_hmi_subpage)(int subpage);
+};
+
+#define SYS_HOST_OPS(d)                                                                                        \
+    void mhe_sys_host_##d##_setup(bool);                                                                       \
+    void mhe_sys_host_##d##_process(struct sp_port *);                                                         \
+    void mhe_sys_host_##d##_destroy(void);                                                                     \
+    void mhe_sys_host_##d##_set_hmi_page(int);                                                                 \
+    void mhe_sys_host_##d##_set_hmi_subpage(int);
+SYS_HOST_OPS(dwarf)
+SYS_HOST_OPS(duox)
+
+#define SYS_HOST_ENTRY(d)                                                                                      \
+    { #d, mhe_sys_host_##d##_setup, mhe_sys_host_##d##_process, mhe_sys_host_##d##_destroy,                    \
+      mhe_sys_host_##d##_set_hmi_page, mhe_sys_host_##d##_set_hmi_subpage }
+static const struct sys_host_ops g_sys_hosts[] = { SYS_HOST_ENTRY(dwarf), SYS_HOST_ENTRY(duox) };
+
+static const struct sys_host_ops *sys_host_for(const char *device)
+{
+    for (size_t i = 0; device && i < sizeof(g_sys_hosts) / sizeof(g_sys_hosts[0]); ++i)
+        if (! strcmp(g_sys_hosts[i].device, device))
+            return &g_sys_hosts[i];
+    return NULL;
+}
 #endif
 
 /* answers a "sys_*" command of the controller */
@@ -189,9 +222,9 @@ static void handle(mhe_syscontrol *sc, const char *message)
         if (sc->has_host && argc > 0)
         {
             if (cmd[5] == 'c')
-                sys_host_set_hmi_page(atoi(argv[0]));
+                sc->host->set_hmi_page(atoi(argv[0]));
             else
-                sys_host_set_hmi_subpage(atoi(argv[0]));
+                sc->host->set_hmi_subpage(atoi(argv[0]));
         }
 #endif
         send_reply(sc, argc > 0 ? "r 0" : "r -1");
@@ -373,7 +406,7 @@ static void *system_control_thread(void *arg)
 #ifdef MHE_WITH_SYS_HOST
             /* forwards what mod-host sent: labels, leds, widget bitmaps */
             if (sc->has_host)
-                sys_host_process(NULL);
+                sc->host->process(NULL);
 #endif
             continue;
         }
@@ -387,8 +420,10 @@ static void *system_control_thread(void *arg)
     return NULL;
 }
 
-mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, const char *state_dir, int debug)
+mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, const char *state_dir,
+                                      const char *device, int debug)
 {
+    (void)device;
     if (g_sc)
         return NULL; /* mod-system-control is one per system */
 
@@ -410,9 +445,12 @@ mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, con
     /* creates /sys_msgs, or listens on MOD_SYS_SERIAL_PORT (tcp://HOST:PORT; on Windows always, by default
      * 127.0.0.1:9901): mod-host must start after it. MHE_NO_SYS_HOST=1 leaves it alone (a second emulator
      * running next to one mod-host is talking to, a test) */
-    if (! getenv("MHE_NO_SYS_HOST"))
+    sc->host = sys_host_for(device);
+    if (! sc->host)
+        fprintf(stderr, "system-control: no sys_host.c for device %s, no mod-host side\n", device ? device : "?");
+    else if (! getenv("MHE_NO_SYS_HOST"))
     {
-        sys_host_setup(debug != 0);
+        sc->host->setup(debug != 0);
 #ifdef _WIN32
         sc->has_host = 1;
 #else
@@ -452,7 +490,7 @@ void mhe_syscontrol_destroy(mhe_syscontrol *sc)
     pthread_join(sc->thread, NULL);
 #ifdef MHE_WITH_SYS_HOST
     if (sc->has_host)
-        sys_host_destroy();
+        sc->host->destroy();
 #endif
     g_sc = NULL;
     free(sc);

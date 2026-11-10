@@ -1,0 +1,123 @@
+{
+  "name": "MOD Duo X",
+  "architecture": "aarch64",
+  "platform": "duox",
+  "bin-compat": "aarch64-a53",
+  "gpio_platform": "",
+  "codec_truebypass": false,
+  "factory_pedalboards": true,
+  "has_noisegate": true,
+  "hmi_actuator_group_prefix": true,
+  "hmi_bank_navigation": false,
+  "hmi_eeprom": true,
+  "hmi_set_index": false,
+  "hmi_set_master_vol": true,
+  "hmi_set_pb_name": true,
+  "hmi_set_ss_name": false,
+  "hmi_set_tuner_input": false,
+  "hmi_set_tuner_ref_freq": false,
+  "hmi_show_empty_pages": false,
+  "hmi_subpages": false,
+  "addressing_pages": 6,
+  "actuators": [
+    {
+      "uri"  : "/hmi/knob1",
+      "name" : "Endless Knob 1",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "id": 0
+    },{
+      "uri"  : "/hmi/knob2",
+      "name" : "Endless Knob 2",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "id": 1
+    },{
+      "uri"  : "/hmi/footswitch1",
+      "name" : "Button 1",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 2
+    },{
+      "uri"  : "/hmi/footswitch2",
+      "name" : "Button 2",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 3
+    },{
+      "uri"  : "/hmi/footswitch3",
+      "name" : "Button 3",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 4
+    },{
+      "uri"  : "/hmi/footswitch4",
+      "name" : "Button 4",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:momentarytoggle:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 5
+    },{
+      "uri"  : "/hmi/potentiometer1",
+      "name" : "Knob 1",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 6
+    },{
+      "uri"  : "/hmi/potentiometer2",
+      "name" : "Knob 2",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 7
+    },{
+      "uri"  : "/hmi/potentiometer3",
+      "name" : "Knob 3",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 8
+    },{
+      "uri"  : "/hmi/potentiometer4",
+      "name" : "Knob 4",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 9
+    },{
+      "uri"  : "/hmi/potentiometer5",
+      "name" : "Knob 5",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 10
+    },{
+      "uri"  : "/hmi/potentiometer6",
+      "name" : "Knob 6",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 11
+    },{
+      "uri"  : "/hmi/potentiometer7",
+      "name" : "Knob 7",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 12
+    },{
+      "uri"  : "/hmi/potentiometer8",
+      "name" : "Knob 8",
+      "modes": ":logarithmic:integer:float:bypass:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 13
+    }
+  ]
+}

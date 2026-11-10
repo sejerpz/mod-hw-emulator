@@ -1,6 +1,6 @@
-# mod-hw-emulator - runs MOD Desktop with the emulated Dwarf as its controller (Windows)
+# mod-hw-emulator - runs MOD Desktop with an emulated controller, the Dwarf or the Duo X (Windows)
 #
-#   mhe-desktop.cmd [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh]
+#   mhe-desktop.cmd [-Device dwarf|duox] [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh]
 #
 # MOD Desktop stays as it is installed. This keeps a copy of it in -Overlay (by default
 # %LOCALAPPDATA%\mod-hw-emulator\mod-desktop, refreshed when the installed files change) with these files changed:
@@ -10,7 +10,7 @@
 #   html\js\hardware.js,         hardware addressing (the Device tab) open, as the descriptor has actuators
 #   html\js\desktop-app.js
 #   mod-desktop.exe              the launcher with an "Open Emulator" button (MOD_HW_EMULATOR below)
-#   mod-hardware-descriptor.json MOD Desktop's descriptor with the Dwarf actuators and HMI options
+#   mod-hardware-descriptor.json MOD Desktop's descriptor with the actuators and HMI options of -Device
 #
 # (all but the descriptor are in mod-desktop-overlay, at their place in the installation)
 #
@@ -19,6 +19,8 @@
 # plugins, settings in Documents\MOD Desktop) is the same as with the installed MOD Desktop: quit that one first.
 
 param(
+    [ValidateSet('dwarf', 'duox')]
+    [string]$Device = 'dwarf',
     [string]$ModDesktop = "$env:ProgramFiles\MOD Desktop",
     [string]$Overlay = "$env:LOCALAPPDATA\mod-hw-emulator\mod-desktop",
     [switch]$NoEmulator,
@@ -29,8 +31,9 @@ $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $files = Join-Path $here 'mod-desktop-overlay'
 $hmiPort = 9900
-# the emulator's EEPROM and settings, the same whoever starts it
-$state = Join-Path $here 'mhe-state'
+# the emulator's EEPROM and settings, one per device, the same whoever starts it
+$state = Join-Path $here "mhe-state\$Device"
+$firmware = Join-Path $here "fw-$Device.dll"
 $sysPort = 9901
 
 if (-not (Test-Path (Join-Path $ModDesktop 'mod-desktop.exe'))) {
@@ -61,15 +64,15 @@ if ($LASTEXITCODE -ge 8) {
     throw "laying '$files' over '$Overlay' failed (robocopy $LASTEXITCODE)"
 }
 
-# MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the Dwarf one gives the rest
+# MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the device's one gives the rest
 $desktop = Get-Content -Raw (Join-Path $ModDesktop 'mod-hardware-descriptor.json') | ConvertFrom-Json
-$dwarf = Get-Content -Raw (Join-Path $here 'devices\dwarf\mod-hardware-descriptor.json') | ConvertFrom-Json
+$descriptor = Get-Content -Raw (Join-Path $here "devices\$Device\mod-hardware-descriptor.json") | ConvertFrom-Json
 foreach ($key in 'name', 'architecture', 'bin-compat') {
     if ($desktop.PSObject.Properties[$key]) {
-        $dwarf.$key = $desktop.$key
+        $descriptor | Add-Member -Force -NotePropertyName $key -NotePropertyValue $desktop.$key
     }
 }
-$json = $dwarf | ConvertTo-Json -Depth 20
+$json = $descriptor | ConvertTo-Json -Depth 20
 [IO.File]::WriteAllText((Join-Path $Overlay 'mod-hardware-descriptor.json'), $json, (New-Object Text.UTF8Encoding $false))
 
 function Test-Listening([int]$port) {
@@ -91,7 +94,7 @@ if (-not $NoEmulator) {
         exit 1
     }
     Start-Process -FilePath (Join-Path $here 'mod-hw-emulator.exe') `
-                  -ArgumentList '--state', ('"{0}"' -f $state), '--tcp', "webgui=$hmiPort", ('"{0}"' -f (Join-Path $here 'fw-dwarf.dll')) `
+                  -ArgumentList '--state', ('"{0}"' -f $state), '--tcp', "webgui=$hmiPort", ('"{0}"' -f $firmware) `
                   -WorkingDirectory $here
 }
 $deadline = (Get-Date).AddSeconds(15)
@@ -107,6 +110,6 @@ $env:MOD_HMI_SERIAL_PORT = "tcp://127.0.0.1:$hmiPort"
 $env:MOD_SYS_SERIAL_PORT = "tcp://127.0.0.1:$sysPort"
 $env:MOD_DEV_HMI = '0'
 # the launcher's "Open Emulator" button runs this, and starts MOD Desktop again if it is running
-$env:MOD_HW_EMULATOR = '"{0}" --state "{1}" --tcp webgui={2} "{3}"' -f (Join-Path $here 'mod-hw-emulator.exe'), $state, $hmiPort, (Join-Path $here 'fw-dwarf.dll')
+$env:MOD_HW_EMULATOR = '"{0}" --state "{1}" --tcp webgui={2} "{3}"' -f (Join-Path $here 'mod-hw-emulator.exe'), $state, $hmiPort, $firmware
 Start-Process -FilePath (Join-Path $Overlay 'mod-desktop.exe') -WorkingDirectory $Overlay
-Write-Host "MOD Desktop (copy in $Overlay) started with the emulated Dwarf"
+Write-Host "MOD Desktop (copy in $Overlay) started with the emulated $Device"

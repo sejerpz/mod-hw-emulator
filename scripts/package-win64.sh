@@ -30,7 +30,7 @@ STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 PKG=$STAGE/mod-hw-emulator
 OVL=$PKG/mod-desktop-overlay
-mkdir -p "$OVL/jack" "$PKG/skins" "$PKG/devices/dwarf" "$PKG/platforms"
+mkdir -p "$OVL/jack" "$PKG/skins" "$PKG/platforms"
 
 # mod-host, built as MOD Desktop builds its own plus the HMI control
 cp -a "$MOD_HOST" "$STAGE/mod-host"
@@ -67,9 +67,14 @@ done
 $RUN make -C "$STAGE/launcher/src/systray"
 cp "$STAGE/launcher/src/systray/mod-desktop.exe" "$OVL/"
 
-# the emulator, with the Qt of MOD Desktop
+# the emulator, with the Qt of MOD Desktop, and the firmware of each device
+DEVICES="dwarf duox"
 $RUN make -C "$EMU" BUILD=build-win64 all gui
-cp "$EMU"/build-win64/{mod-hw-emulator.exe,mhe-run.exe,fw-dwarf.dll} "$PKG/"
+for d in $DEVICES; do
+    $RUN make -C "$EMU" BUILD=build-win64 DEVICE=$d firmware
+    cp "$EMU/build-win64/fw-$d.dll" "$PKG/"
+done
+cp "$EMU"/build-win64/{mod-hw-emulator.exe,mhe-run.exe} "$PKG/"
 
 PREFIX=$($RUN sh -c 'echo $PAWPAW_PREFIX')
 for dll in Qt5Core Qt5Gui Qt5Widgets; do
@@ -89,8 +94,11 @@ for dll in $(x86_64-w64-mingw32-objdump -p "$PKG"/*.exe "$PKG"/*.dll "$PKG"/plat
     done
 done
 
-cp -r "$EMU/devices/dwarf/skin" "$PKG/skins/dwarf"
-cp "$EMU/devices/dwarf/mod-hardware-descriptor.json" "$PKG/devices/dwarf/"
+for d in $DEVICES; do
+    cp -r "$EMU/devices/$d/skin" "$PKG/skins/$d"
+    mkdir -p "$PKG/devices/$d"
+    cp "$EMU/devices/$d/mod-hardware-descriptor.json" "$PKG/devices/$d/"
+done
 cp "$EMU/scripts/mhe-desktop.ps1" "$PKG/"
 sed 's/$/\r/' "$EMU/scripts/mhe-desktop.cmd" > "$PKG/mhe-desktop.cmd"
 cp "$EMU/LICENSE" "$PKG/"

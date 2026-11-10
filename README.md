@@ -41,6 +41,27 @@ The module tells which sources it was built from (describe, full commit, date): 
 start, the user interface shows it in its title and has a **Firmware** menu with the builds next to the
 module, choosing one restarts the emulator on it.
 
+### MOD Duo X
+
+```sh
+scripts/fetch-firmware.sh duox     # mod-audio/mod-duox-controller into external/
+make DEVICE=duox                   # build/fw-duox-<describe>.so, build/fw-duox.so
+build/mhe-run build/fw-duox.so "wait 6000" "send webgui boot 4 0 0 0 0 0" "wait 3000" "pot knob1 30000" "snap duox.png"
+build/mod-hw-emulator build/fw-duox.so
+```
+
+`snap` writes both displays side by side, `pot` sets a potentiometer (0..65535). The controls take the names
+of the firmware and of the Duo X skin (`devices/duox/skin/`): `Endless Knob 1/2`, `Snapshot 1`, `Page`,
+`Snapshot 2`, `Knob 1..8` (the potentiometers), `Button 1..4` (the buttons under them). In the user
+interface the potentiometers turn with the wheel or a vertical drag, a double click puts one in the middle;
+Q/A W/S turn the endless knobs, 1 2 push them, Z X C V are the buttons 1-4, F1-F3 Snapshot 1, Page,
+Snapshot 2.
+
+With mod-ui as for the Dwarf (below), with the Duo X descriptor:
+`MOD_HARDWARE_DESC_FILE=../mod-hw-emulator/devices/duox/mod-hardware-descriptor.json`. It is written from
+the firmware, not taken from the device, and has no HMI widgets: the Duo X firmware does not draw them (see
+"Device profile" in [DESIGN.md](DESIGN.md)). Not tried with mod-ui yet.
+
 ## Try it headless
 
 ```sh
@@ -137,7 +158,8 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
 installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
 the TCP line and its addressing dialog with the Device tab open
-([patches/mod-ui](patches/mod-ui)), a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
+([patches/mod-ui](patches/mod-ui)), a descriptor with the actuators of the device: the Dwarf, or the Duo X with
+`-Device duox`. MOD Desktop itself is not changed: the script keeps a copy
 of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
 plugins and settings are the usual ones; quit the installed MOD Desktop first. The copy's launcher has an
 **Open Emulator** button (and tray menu entry) to start the emulator again after closing it: a running MOD Desktop
@@ -145,6 +167,7 @@ then stops and starts, as mod-ui connects to the controller only when it starts.
 
 ```bat
 mhe-desktop.cmd                      :: -ModDesktop DIR if it is not in Program Files
+mhe-desktop.cmd -Device duox         :: the Duo X; each device keeps its state in mhe-state\<device>
 ```
 
 The package is built in mod-desktop's CI container (ubuntu:22.04) with mod-desktop's PawPaw for win64, so
