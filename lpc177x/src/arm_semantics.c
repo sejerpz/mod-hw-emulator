@@ -14,6 +14,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#ifndef MHE_FW_DESCRIBE
+#define MHE_FW_DESCRIBE "?"   /* git describe of the firmware sources, from the Makefile */
+#endif
+
 #if defined(__x86_64__) || defined(_M_X64)
 
 /* length of the DIV/IDIV instruction at `ip` and its operand size in bytes, 0 if it is not one */
@@ -185,11 +189,12 @@ static void on_fault(int sig, siginfo_t *info, void *context)
 
     if (in_module(ip))
     {
-        char text[256];
+        char text[384];
         const unsigned long offset = (unsigned long)(ip - (uintptr_t)g_module_base);
         const int n = snprintf(text, sizeof(text),
-            "[fw] firmware crashed: invalid memory access to %p at module offset 0x%lx "
-            "(addr2line -f -e <module> 0x%lx)%s\n", info->si_addr, offset, offset,
+            "[fw] firmware %s crashed: invalid memory access to %p at module offset 0x%lx "
+            "(addr2line -f -e <module> 0x%lx)%s; known firmware bugs: DESIGN.md\n", MHE_FW_DESCRIBE,
+            info->si_addr, offset, offset,
             (uintptr_t)info->si_addr < 0x10000 ? "; a NULL pointer, readable flash on the LPC1778" : "");
         if (n > 0)
             (void)! write(2, text, (size_t)n);

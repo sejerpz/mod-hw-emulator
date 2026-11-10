@@ -93,6 +93,30 @@ The firmware is compiled from its own repository (see `scripts/fetch-firmware.sh
   repository: `main()` renamed, the ARM fault handlers that read `LR` replaced. These are the candidates to
   upstream as `#ifdef MOD_HW_EMULATOR` guards.
 
+### Firmware versions
+
+A build is identified by `git describe --tags --always --dirty` of its sources, read by the Makefile from
+the checkout before compiling: it names the module (`build/fw-dwarf-<describe>.so`) and its object folder
+(`build/dwarf-<describe>/`), so the builds of several versions coexist and each stays incremental.
+`build/fw-dwarf.so` links to the last build. `FW_REF` picks a commit of the checkout without touching it:
+`scripts/export-firmware.sh` writes it out with `git archive`, plus the protocol submodule at its pinned
+commit, from the submodule clone in the checkout (the aLabs pins are not all published). A tag named in
+`FW_REF` names the build even when another tag sits on the same commit.
+
+Checked: `alabs10`, `alabs15`, `stls18`, `feature/mod-hw-emulator` and mod-audio's `master` build with the
+same adaptations and boot. `master` has no `HardFault_Analisys`: the main.c adaptation cuts from
+`HardFault_Handler` there. mod-audio does not tag the controller (its releases are tagged in the OS image),
+so an upstream build is named after its commit hash.
+
+The module exports `mhe_firmware_info()` (device, describe, nearest tag, full commit, commit date), callable
+before the entry so the host can choose the state folder: `mhe-state/<tag>/` by default, because the
+EEPROM layout may change between versions while the commits on one tag share it. The info is also in
+`mhe_module.info`. `VERSION_HASH`, which the firmware draws on its display, stays `v.<hash8>`: there is no
+room for a longer string.
+
+A module cannot start twice in one process (the firmware threads are parked, not joined), so the GUI
+Firmware menu starts a new process with the same arguments on the chosen module and quits.
+
 ### Module ABI (`include/mhe/emu_module.h`)
 
 One firmware per shared library, because firmwares share symbol names (`glcd_*`, `naveg_*`, …). The host loads
@@ -187,8 +211,10 @@ pot values; their LPC/ADC and display controller models are added when their fir
   firmware branch `feature/mod-hw-emulator`: `CM_set_foot_led(NULL)` after `pcl`, `cb_menu_item_changed()`
   reading past the arguments of `c`, `data_free_banks_list()` freeing the flags twice (bank list in the
   navigation mode), and `foot_control_rm()` reading an empty footswitch (a pedalboard loaded from the
-  navigation mode). The emulator reports any invalid access in the firmware with its module offset (for
-  `addr2line`).
+  navigation mode). The emulator reports any invalid access in the firmware with the firmware describe and
+  its module offset (for `addr2line`). Older firmwares (the aLabs tags, mod-audio `master`) have these bugs
+  and are built as they are, never patched: a crash in one of the places above is this list, not the
+  emulator.
 - **Integer division by zero** returns 0 on the Cortex-M3 and traps on x86-64. The emulator completes the
   instruction the ARM way and logs it once: `screen_page_index()` divides by the number of available pages,
   0 when `boot` arrives before `pa` — a latent firmware bug.

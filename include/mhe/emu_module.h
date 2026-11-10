@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #define MHE_MODULE_ENTRY "mhe_module_entry"
+#define MHE_FIRMWARE_INFO "mhe_firmware_info"   /* optional; may be called before the entry */
 
 /* pixel formats of display frames, same values as ALABS_HMI_PixelFormat */
 typedef enum {
@@ -69,6 +70,18 @@ typedef struct {
     const char *name;
 } mhe_serial_info;
 
+/* which firmware sources the module was built from, as git saw them at build time; strings never NULL */
+typedef struct {
+    size_t size;
+    const char *device;     /* e.g. "dwarf" */
+    const char *describe;   /* git describe --tags --always [--dirty]: "stls18", "stls18-21-g9b9e9f7-dirty" */
+    const char *tag;        /* nearest tag ("stls18"), or the abbreviated hash when no tag is reachable */
+    const char *commit;     /* full commit hash */
+    const char *date;       /* commit date, ISO 8601 */
+} mhe_fw_info;
+
+typedef const mhe_fw_info *(*mhe_fw_info_fn)(void);
+
 /* what the host gives the module */
 typedef struct mhe_host {
     size_t size;
@@ -117,6 +130,9 @@ typedef struct mhe_module {
 
     /* bytes received on a serial channel */
     void (*serial_rx)(uint8_t channel, const uint8_t *data, size_t size);
+
+    /* the same as mhe_firmware_info(); may be NULL */
+    const mhe_fw_info *info;
 } mhe_module;
 
 typedef const mhe_module *(*mhe_module_entry_fn)(const mhe_host *host);

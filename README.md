@@ -18,6 +18,29 @@ The firmware is built from `../alabs-mod-custom-images/mod-dwarf-controller` (br
 submodule on the widgets and ui-config branches merged); `make FW_DWARF=path` for another checkout.
 `scripts/fetch-firmware.sh` clones the sources into `external/` where there is no checkout.
 
+### Several firmware versions
+
+Every build is named after `git describe --tags --always --dirty` of its sources, so builds of different
+firmware versions sit side by side:
+
+```sh
+make                           # build/fw-dwarf-stls18-21-g9b9e9f7.so (the checkout as it is, -dirty if changed)
+make firmware FW_REF=alabs15   # build/fw-dwarf-alabs15.so: a tag, branch or commit of the checkout
+make firmwares                 # list them
+```
+
+`build/fw-dwarf.so` is a link to the last one built (a copy on Windows), so the commands below work as
+they are. `FW_REF` exports that commit with `git archive` to `build/src/` with its protocol submodule at
+the commit it pins (taken from the submodule clone in the checkout): the checkout itself is not touched.
+The aLabs tags (`alabs10` and later, `stls16`…) build as they are; mod-audio publishes no tags of the
+controller, its `master` builds too (`FW_REF=master`, named after the commit hash). Firmwares without the
+fixes of `feature/mod-hw-emulator` can crash the emulator on bugs the device does not notice: see
+"What the spike taught" in [DESIGN.md](DESIGN.md).
+
+The module tells which sources it was built from (describe, full commit, date): `mhe-run` prints it at
+start, the user interface shows it in its title and has a **Firmware** menu with the builds next to the
+module, choosing one restarts the emulator on it.
+
 ## Try it headless
 
 ```sh
@@ -26,7 +49,9 @@ build/mhe-run build/fw-dwarf.so "wait 1000" "send webgui boot 4 0 0 0 0 0" "wait
 
 `mhe-run` prints what the firmware sends on its serial channels (`[webgui] …`, `[system] …`) and accepts
 commands as arguments or on stdin; see the top of [host/run/mhe-run.c](host/run/mhe-run.c).
-The EEPROM image and the emulated system settings are kept in `mhe-state/` (`--state DIR` to change it).
+The EEPROM image and the emulated system settings are kept in `mhe-state/<tag>/`, one folder per firmware
+tag (the nearest one: `stls18` for `stls18-21-g9b9e9f7`), since the EEPROM layout may change between
+versions; a new tag starts from an empty state. `--state DIR` names another folder.
 
 The emulator plays the parts of the device around the controller:
 
