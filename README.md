@@ -114,7 +114,9 @@ installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HM
 the TCP line and its addressing dialog with the Device tab open
 ([patches/mod-ui](patches/mod-ui)), a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
 of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
-plugins and settings are the usual ones; quit the installed MOD Desktop first.
+plugins and settings are the usual ones; quit the installed MOD Desktop first. The copy's launcher has an
+**Open Emulator** button (and tray menu entry) to start the emulator again after closing it: a running MOD Desktop
+then stops and starts, as mod-ui connects to the controller only when it starts.
 
 ```bat
 mhe-desktop.cmd                      :: -ModDesktop DIR if it is not in Program Files
@@ -133,7 +135,7 @@ mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top
 | `devices/dwarf/` | Dwarf board: pins, panel, module entry; `skin/` the panel picture of the user interface (CC BY 4.0) |
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
-| `patches/` | the mod-ui changes the emulator needs: the TCP HMI line (also on mod-ui branch `feature/mod-hw-emulator`), hardware addressing on MOD Desktop when the descriptor has actuators |
+| `patches/` | the mod-ui changes the emulator needs: the TCP HMI line (also on mod-ui branch `feature/mod-hw-emulator`), hardware addressing on MOD Desktop when the descriptor has actuators; mod-desktop's launcher with the Open Emulator button |
 
 ## License
 

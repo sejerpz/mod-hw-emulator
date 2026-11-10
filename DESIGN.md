@@ -149,7 +149,8 @@ pot values; their LPC/ADC and display controller models are added when their fir
   launcher passes its environment to jackd and mod-ui. `mhe-desktop` (Windows: `scripts/mhe-desktop.ps1`)
   keeps a copy of the installation (the user data is in the user's folders, shared), lays mod-host, `hmi.py`,
   the addressing dialog (MOD Desktop locks its Device tab and shows a card for the hardware; with actuators in the
-  descriptor it stays open) and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
+  descriptor it stays open), the launcher with an Open Emulator button (shown only with `MOD_HW_EMULATOR`, the
+  command line of the emulator) and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
   then the copy. The files are built for one mod-desktop release (`scripts/package-win64.sh`, in mod-desktop's
   CI container with its PawPaw), so mod-host links the jack and lilv it is loaded with; mod-ui stays the
   release's own but for the files `patches/mod-ui` changes, whose originals are checked by hash.

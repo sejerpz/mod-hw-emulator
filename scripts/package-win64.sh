@@ -54,6 +54,19 @@ for f in $(cd "$STAGE/mod-ui" && cat "$EMU"/patches/mod-ui/*.patch | awk '/^\+\+
     echo "$(sha256sum "$MOD_DESKTOP/src/mod-ui/$f" | cut -d' ' -f1 | tr a-f A-F) $f" >> "$OVL/base-sha256.txt"
 done
 
+# MOD Desktop's launcher with the button that starts the emulator (patches/mod-desktop); its sources
+# expect the checkout around them (VERSION, res/)
+mkdir -p "$STAGE/launcher/src"
+cp "$MOD_DESKTOP/VERSION" "$STAGE/launcher/"
+cp -a "$MOD_DESKTOP/res" "$STAGE/launcher/"
+cp -a "$MOD_DESKTOP/src/systray" "$STAGE/launcher/src/"
+rm -f "$STAGE"/launcher/src/systray/*.o "$STAGE"/launcher/src/systray/mod-desktop.exe
+for p in "$EMU"/patches/mod-desktop/*.patch; do
+    patch -s -p1 -d "$STAGE/launcher" < "$p"
+done
+$RUN make -C "$STAGE/launcher/src/systray"
+cp "$STAGE/launcher/src/systray/mod-desktop.exe" "$OVL/"
+
 # the emulator, with the Qt of MOD Desktop
 $RUN make -C "$EMU" BUILD=build-win64 all gui
 cp "$EMU"/build-win64/{mod-hw-emulator.exe,mhe-run.exe,fw-dwarf.dll} "$PKG/"

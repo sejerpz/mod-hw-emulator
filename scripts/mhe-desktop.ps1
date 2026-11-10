@@ -9,6 +9,7 @@
 #   mod\hmi.py                   mod-ui's HMI line over TCP as well as over a serial port
 #   html\js\hardware.js,         hardware addressing (the Device tab) open, as the descriptor has actuators
 #   html\js\desktop-app.js
+#   mod-desktop.exe              the launcher with an "Open Emulator" button (MOD_HW_EMULATOR below)
 #   mod-hardware-descriptor.json MOD Desktop's descriptor with the Dwarf actuators and HMI options
 #
 # (all but the descriptor are in mod-desktop-overlay, at their place in the installation)
@@ -28,6 +29,8 @@ $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $files = Join-Path $here 'mod-desktop-overlay'
 $hmiPort = 9900
+# the emulator's EEPROM and settings, the same whoever starts it
+$state = Join-Path $here 'mhe-state'
 $sysPort = 9901
 
 if (-not (Test-Path (Join-Path $ModDesktop 'mod-desktop.exe'))) {
@@ -88,7 +91,7 @@ if (-not $NoEmulator) {
         exit 1
     }
     Start-Process -FilePath (Join-Path $here 'mod-hw-emulator.exe') `
-                  -ArgumentList '--tcp', "webgui=$hmiPort", (Join-Path $here 'fw-dwarf.dll') `
+                  -ArgumentList '--state', ('"{0}"' -f $state), '--tcp', "webgui=$hmiPort", ('"{0}"' -f (Join-Path $here 'fw-dwarf.dll')) `
                   -WorkingDirectory $here
 }
 $deadline = (Get-Date).AddSeconds(15)
@@ -103,5 +106,7 @@ while (-not (Test-Listening $sysPort)) {
 $env:MOD_HMI_SERIAL_PORT = "tcp://127.0.0.1:$hmiPort"
 $env:MOD_SYS_SERIAL_PORT = "tcp://127.0.0.1:$sysPort"
 $env:MOD_DEV_HMI = '0'
+# the launcher's "Open Emulator" button runs this, and starts MOD Desktop again if it is running
+$env:MOD_HW_EMULATOR = '"{0}" --state "{1}" --tcp webgui={2} "{3}"' -f (Join-Path $here 'mod-hw-emulator.exe'), $state, $hmiPort, (Join-Path $here 'fw-dwarf.dll')
 Start-Process -FilePath (Join-Path $Overlay 'mod-desktop.exe') -WorkingDirectory $Overlay
 Write-Host "MOD Desktop (copy in $Overlay) started with the emulated Dwarf"
