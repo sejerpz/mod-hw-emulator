@@ -148,7 +148,9 @@ What it is built with:
 - `sys_host.c` of mod-system-control (AGPLv3+), into the runner and the user interface;
 - Qt5 (LGPLv3), dynamically linked by the user interface;
 - the Dwarf panel skin in `devices/dwarf/skin/` (CC BY 4.0), drawn from the MOD Dwarf exterior model by MOD Audio,
-  see [its README](devices/dwarf/skin/README.md).
+  see [its README](devices/dwarf/skin/README.md);
+- the Duo X panel skin in `devices/duox/skin/` is part of this project (AGPLv3+), drawn from the positions in the
+  Duo X controller board files, see [its README](devices/duox/skin/README.md).
 
 ## Use of AI
 
