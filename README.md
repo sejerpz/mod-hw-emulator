@@ -158,7 +158,8 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
 installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
 the TCP line and its addressing dialog with the Device tab open
-([patches/mod-ui](patches/mod-ui)), a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
+([patches/mod-ui](patches/mod-ui)), a descriptor with the actuators of the device: the Dwarf, or the Duo X with
+`-Device duox`. MOD Desktop itself is not changed: the script keeps a copy
 of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
 plugins and settings are the usual ones; quit the installed MOD Desktop first. The copy's launcher has an
 **Open Emulator** button (and tray menu entry) to start the emulator again after closing it: a running MOD Desktop
@@ -166,6 +167,7 @@ then stops and starts, as mod-ui connects to the controller only when it starts.
 
 ```bat
 mhe-desktop.cmd                      :: -ModDesktop DIR if it is not in Program Files
+mhe-desktop.cmd -Device duox         :: the Duo X; each device keeps its state in mhe-state\<device>
 ```
 
 The package is built in mod-desktop's CI container (ubuntu:22.04) with mod-desktop's PawPaw for win64, so
