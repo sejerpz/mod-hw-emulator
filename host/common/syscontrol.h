@@ -5,8 +5,9 @@
  * ("sys_* LEN ARGS"), keeping the values it is given, as mod-system-control does on the device with the audio
  * codec, Bluetooth, systemd...
  *
- * mod-host side (Linux, macOS): built with mod-system-control's own sys_host.c, it creates the /sys_msgs shared
- * memory mod-host opens when its HMI control is enabled, and forwards labels, values, leds and plugin widget
+ * mod-host side: built with mod-system-control's own sys_host.c, it creates the /sys_msgs shared memory mod-host
+ * opens when its HMI control is enabled, or listens for mod-host on MOD_SYS_SERIAL_PORT (always on Windows),
+ * and forwards labels, values, leds and plugin widget
  * bitmaps to the controller with the same page cache and resends as on the device.
  *
  * Everything runs on one thread, in the order of mod-system-control's main loop.

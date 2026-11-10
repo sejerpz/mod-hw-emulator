@@ -171,15 +171,25 @@ Duo X hardware descriptor, sys_host.c built for the Duo X (it is compiled with `
   in `mod/hmi.py`, using tornado's `IOStream`, no pyserial needed), `MOD_DEV_HMI=0`, and
   `MOD_HARDWARE_DESC_FILE` pointing to the device descriptor.
 - **mod-host** is built with `MOD_HMI_EMULATOR`: it enables the HMI control code without the device I/O
-  processing, picks the device at run time (`MOD_EMU_DEVICE`), and in place of the POSIX shared memory of
-  `sys_host.h` connects to the emulator over TCP.
+  processing. It opens `/sys_msgs` as on the device, POSIX shared memory, or with `MOD_SYS_SERIAL_PORT=tcp://HOST:PORT`
+  (always on Windows, 127.0.0.1:9901 by default) connects to the emulator over TCP: `sys_serial_tcp.h`, in
+  mod-system-control and in mod-host's copy of `sys_host.h`. Each side keeps the shared memory layout in its
+  own memory and two threads copy what one side writes to the other over the socket, so the code that writes
+  and reads the ring buffers does not change and mod-host still never blocks writing from a plugin. On the
+  wire a message is the bytes it is in a ring buffer. It also covers macOS, where `mod-semaphore.h` has no
+  semaphores shared between processes.
 - **mod-system-control** is not needed: the emulator bridges `sys_msgs` to the firmware system serial and
   answers the system commands of the controller (gain, settings, Wi-Fi…) with emulated values.
 - **Delivery without rebuilding mod-desktop**: mod-host is a single JACK internal client
-  (`jack/mod-host.(dll|so)`), mod-ui's `mod` package and `html/` are plain folders next to the frozen
-  executable, and the launcher inherits its environment. An overlay step makes a copy of a mod-desktop
-  install (plugins and pedalboards linked, not copied), replaces those three items and starts it with the
-  emulation environment.
+  (`jack/mod-host.(dll|so)`), mod-ui's `mod` package is a plain folder next to the frozen executable, and the
+  launcher passes its environment to jackd and mod-ui. `mhe-desktop` (Windows: `scripts/mhe-desktop.ps1`)
+  keeps a copy of the installation (the user data is in the user's folders, shared), lays mod-host, `hmi.py`,
+  the addressing dialog (MOD Desktop locks its Device tab and shows a card for the hardware; with actuators in the
+  descriptor it stays open), the launcher with an Open Emulator button (shown only with `MOD_HW_EMULATOR`, the
+  command line of the emulator) and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
+  then the copy. The files are built for one mod-desktop release (`scripts/package-win64.sh`, in mod-desktop's
+  CI container with its PawPaw), so mod-host links the jack and lilv it is loaded with; mod-ui stays the
+  release's own but for the files `patches/mod-ui` changes, whose originals are checked by hash.
 
 ## Milestones
 
@@ -193,9 +203,11 @@ Duo X hardware descriptor, sys_host.c built for the Duo X (it is compiled with `
    `/sys_msgs` → mod-system-control's own `sys_host.c` built into the emulator (page cache, resends,
    bitmaps in bands) → firmware → widget areas on the emulated display. mod-host branch
    `feature/mod-hw-emulator` builds with `MOD_HMI_EMULATOR=1` (HMI control without the device audio
-   processing) and runs as a JACK internal client, the only mode where it opens `/sys_msgs`. POSIX shared
-   memory, so Linux and macOS; Windows needs a transport of its own (TCP) on both sides.
-5. Overlay for an installed mod-desktop; PawPaw build of the emulator.
+   processing) and runs as a JACK internal client, the only mode where it opens `/sys_msgs`.
+5. **Done on Windows** — `/sys_msgs` over TCP; the emulator built with MinGW and the Qt of PawPaw runs natively;
+   `mhe-desktop.cmd` over MOD Desktop built from mod-desktop main (the 0.14 release): mod-ui on the HMI line
+   (9900), mod-host on `/sys_msgs` (9901), the pedalboard on the emulated display. Plugin widgets there: not
+   tried (MOD Desktop's mod-ui has no Display dialog). Linux overlay: to do.
 6. **Done** — Skin layout, Dwarf panel picture. Duo X and Duo profiles: to do.
 
 ## What the spike taught

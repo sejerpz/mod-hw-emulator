@@ -94,7 +94,9 @@ On the device mod-host hands the widget bitmaps to mod-system-control through th
 memory. The emulator builds mod-system-control's `sys_host.c` from `../mod-system-control` (branch
 `feature/hmi-widgets`) and creates `/sys_msgs` itself. mod-host opens it only as a JACK internal client, as
 on the device and in mod-desktop, and only when built with `make MOD_HMI_EMULATOR=1` (`../mod-host`,
-branch `feature/mod-hw-emulator`). Three terminals, in this order:
+branch `feature/mod-hw-emulator`). With `MOD_SYS_SERIAL_PORT=tcp://127.0.0.1:9901` in the environment of both,
+the emulator listens there and mod-host connects, in place of the shared memory; on Windows it is the only way
+and the default. Three terminals, in this order:
 
 ```sh
 build/mod-hw-emulator --tcp webgui=9900 build/fw-dwarf.so      # or build/mhe-run, same options
@@ -140,6 +142,24 @@ Two footswitches together (B+C for the pedalboard and bank navigation, A+B for t
 at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click the other one. `mhe-run` has
 `chord footswitchb footswitchc`.
 
+## On Windows, with MOD Desktop
+
+The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
+installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
+the TCP line and its addressing dialog with the Device tab open
+([patches/mod-ui](patches/mod-ui)), a descriptor with the Dwarf actuators. MOD Desktop itself is not changed: the script keeps a copy
+of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
+plugins and settings are the usual ones; quit the installed MOD Desktop first. The copy's launcher has an
+**Open Emulator** button (and tray menu entry) to start the emulator again after closing it: a running MOD Desktop
+then stops and starts, as mod-ui connects to the controller only when it starts.
+
+```bat
+mhe-desktop.cmd                      :: -ModDesktop DIR if it is not in Program Files
+```
+
+The package is built in mod-desktop's CI container (ubuntu:22.04) with mod-desktop's PawPaw for win64, so
+mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top of the script.
+
 ## Layout
 
 | Path | What |
@@ -150,7 +170,7 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 | `devices/dwarf/` | Dwarf board: pins, panel, module entry; `skin/` the panel picture of the user interface (CC BY 4.0) |
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
-| `patches/` | the mod-ui change the emulator needs (also on mod-ui branch `feature/mod-hw-emulator`) |
+| `patches/` | the mod-ui changes the emulator needs: the TCP HMI line (also on mod-ui branch `feature/mod-hw-emulator`), hardware addressing on MOD Desktop when the descriptor has actuators; mod-desktop's launcher with the Open Emulator button |
 
 ## License
 
@@ -163,7 +183,9 @@ What it is built with:
 - `sys_host.c` of mod-system-control (AGPLv3+), into the runner and the user interface;
 - Qt5 (LGPLv3), dynamically linked by the user interface;
 - the Dwarf panel skin in `devices/dwarf/skin/` (CC BY 4.0), drawn from the MOD Dwarf exterior model by MOD Audio,
-  see [its README](devices/dwarf/skin/README.md).
+  see [its README](devices/dwarf/skin/README.md);
+- the Duo X panel skin in `devices/duox/skin/` is part of this project (AGPLv3+), drawn from the positions in the
+  Duo X controller board files, see [its README](devices/duox/skin/README.md).
 
 ## Use of AI
 

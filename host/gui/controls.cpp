@@ -11,6 +11,10 @@
 
 #include <cmath>
 
+#ifndef M_PI   /* not in strict C++ (MinGW's -std=c++17) */
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace {
 
 const QColor kPanel(38, 40, 44);
@@ -77,16 +81,23 @@ void LcdWidget::paintEvent(QPaintEvent *)
     const QColor off(14, 15, 18);
     const int stride = (m_width + 7) / 8;
 
-    /* skinned: the glass of the picture is exactly the pixel area, at any scale */
+    /* skinned: the whole window of the picture is glass, the pixels as large as it lets them, centred */
     if (m_skinned)
     {
-        p.fillRect(rect(), off);
-        const double sx = width() / double(m_width), sy = height() / double(m_height);
-        const double gap = sx >= 3 ? 0.6 : 0;
+        p.setRenderHint(QPainter::Antialiasing);
+        QPainterPath glass;
+        const double radius = width() * 0.02;
+        glass.addRoundedRect(QRectF(rect()), radius, radius);
+        p.fillPath(glass, off);
+        p.setRenderHint(QPainter::Antialiasing, false);
+
+        const double s = std::min(width() / double(m_width), height() / double(m_height));
+        const double x0 = (width() - s * m_width) / 2, y0 = (height() - s * m_height) / 2;
+        const double gap = s >= 3 ? 0.6 : 0;
         for (int y = 0; y < m_height; ++y)
             for (int x = 0; x < m_width; ++x)
                 if ((m_bits[static_cast<size_t>(y * stride + x / 8)] >> (7 - x % 8)) & 1)
-                    p.fillRect(QRectF(x * sx, y * sy, sx - gap, sy - gap), lit);
+                    p.fillRect(QRectF(x0 + x * s, y0 + y * s, s - gap, s - gap), lit);
         return;
     }
 

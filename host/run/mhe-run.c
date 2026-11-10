@@ -299,7 +299,11 @@ static int run_command(char *line)
         return 1;
     if (! strcmp(cmd, "break")) /* stops in a debugger: inspect the firmware tasks */
     {
+#ifdef _WIN32
+        __debugbreak();
+#else
         raise(SIGTRAP);
+#endif
         return 0;
     }
     if (! strcmp(cmd, "wait") && argc >= 2)
@@ -472,7 +476,14 @@ int main(int argc, char **argv)
     {
         g_sys = mhe_syscontrol_create(sys_reply, NULL, state_dir, getenv("MHE_SYS_DEBUG") != NULL);
         if (mhe_syscontrol_has_host(g_sys))
-            printf("system-control: /sys_msgs ready, start mod-host now\n");
+        {
+            const char *tcp = getenv("MOD_SYS_SERIAL_PORT");
+#ifdef _WIN32
+            if (! tcp || ! *tcp)
+                tcp = "tcp://127.0.0.1:9901";
+#endif
+            printf("system-control: /sys_msgs ready (%s), start mod-host now\n", tcp && *tcp ? tcp : "shared memory");
+        }
     }
     if (g_mod->start() != 0)
     {
