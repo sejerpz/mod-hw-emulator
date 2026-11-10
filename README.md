@@ -55,7 +55,12 @@ of the firmware and of the Duo X skin (`devices/duox/skin/`): `Endless Knob 1/2`
 `Snapshot 2`, `Knob 1..8` (the potentiometers), `Button 1..4` (the buttons under them). In the user
 interface the potentiometers turn with the wheel or a vertical drag, a double click puts one in the middle;
 Q/A W/S turn the endless knobs, 1 2 push them, Z X C V are the buttons 1-4, F1-F3 Snapshot 1, Page,
-Snapshot 2. Not yet with mod-ui: see "Device profile" in [DESIGN.md](DESIGN.md).
+Snapshot 2.
+
+With mod-ui as for the Dwarf (below), with the Duo X descriptor:
+`MOD_HARDWARE_DESC_FILE=../mod-hw-emulator/devices/duox/mod-hardware-descriptor.json`. It is written from
+the firmware, not taken from the device, and has no HMI widgets: the Duo X firmware does not draw them (see
+"Device profile" in [DESIGN.md](DESIGN.md)). Not tried with mod-ui yet.
 
 ## Try it headless
 

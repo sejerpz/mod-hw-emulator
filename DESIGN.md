@@ -151,10 +151,25 @@ between the endless knobs (Snapshot 1, Page, Snapshot 2) are the firmware's FOOT
 seven RGB leds; the names are those of the skin (`devices/duox/skin`), which lists the four footswitches as
 `square`, drawn as buttons.
 
+`devices/duox/mod-hardware-descriptor.json` is not the device's own file (none is published): it is written
+from the firmware and from what mod-ui reads. Actuator ids are the firmware's hw_id (0-1 the endless knobs,
+2-5 the buttons, 6-13 the potentiometers, as `TOTAL_ACTUATORS` counts them), six addressing pages and no
+subpages (`PAGES_COUNT`, `pa`), and only the boot data and names its protocol handles: master volume in
+`boot`, the pedalboard name (`pn`); no snapshot name, tuner input or reference (it registers none of
+those commands). The `/hmi/...` URIs follow the Dwarf ones: pedalboards addressed on a real Duo X may name
+other URIs. The HMI widgets are left out: the Duo X firmware has none, so neither the descriptor has the
+`hmi_widget_*` keys of the Dwarf (`mod-hardware-descriptor.d/`) nor mod-ui offers widget areas for it.
+
+sys_host.c of mod-system-control is built for one device (`_MOD_DEVICE_DWARF`, `_MOD_DEVICE_DUOX`: pages,
+subpages, actuators of its page cache), and the hosts load any device. So it is built once per device
+(`build/msc/sys_host-<device>.o`), its public functions renamed by `msc-shim/sys_host_device.h`
+(`mhe_sys_host_duox_setup`...), and the system-control emulation calls the copy of the device the module
+declares; a device with none runs without the mod-host side.
+
 Checked: boot splash across the two displays, `boot` answered with the master volume screen, the page button
-and its led, headless and in the user interface (skin and `--simple`). Not yet: mod-ui with a Duo X hardware
-descriptor, sys_host.c built for the Duo X (it is compiled with `_MOD_DEVICE_DWARF`), the jack leds of the
-skin (Input/Output 1/2): the device profile has no led for them, they stay off.
+and its led, headless and in the user interface (skin and `--simple`). Built, not run yet: the descriptor
+with mod-ui and a pedalboard, sys_host.c for the Duo X with mod-host. The jack leds of the skin
+(Input/Output 1/2): the device profile has no led for them, they stay off.
 
 ### UI
 

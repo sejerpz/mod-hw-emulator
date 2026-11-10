@@ -49,11 +49,14 @@ COMMON_CFLAGS += -fvisibility=hidden
 endif
 
 # mod-system-control: its sys_host.c (the mod-host side: labels, leds, widget bitmaps through /sys_msgs) is
-# built into the hosts when the checkout is there; over TCP on Windows (MOD_SYS_SERIAL_PORT)
+# built into the hosts when the checkout is there; over TCP on Windows (MOD_SYS_SERIAL_PORT). It is built for
+# one device (_MOD_DEVICE_DWARF...), so once per device, its functions renamed (host/common/msc-shim/sys_host_device.h)
 MSC ?= ../mod-system-control
+SYS_HOST_DEVICES = dwarf duox
 ifneq (,$(wildcard $(MSC)/src/sys_host.c))
 SYS_HOST_SRC    = $(MSC)/src/sys_host.c
-SYS_HOST_CFLAGS = -DMHE_WITH_SYS_HOST -D_MOD_DEVICE_DWARF -Ihost/common/msc-shim -I$(MSC)/src
+SYS_HOST_CFLAGS = -DMHE_WITH_SYS_HOST -Ihost/common/msc-shim -I$(MSC)/src
+SYS_HOST_OBJ    = $(foreach d,$(SYS_HOST_DEVICES),$(BUILD)/msc/sys_host-$(d).o)
 endif
 
 all: firmware $(BUILD)/mhe-run$(EXE_EXT)
@@ -193,10 +196,17 @@ firmwares:
 RUN_SRC = host/run/mhe-run.c host/common/module_loader.c host/common/png.c host/common/syscontrol.c \
           host/common/console.c host/common/tcp_serial.c
 
-$(BUILD)/mhe-run$(EXE_EXT): $(RUN_SRC) $(SYS_HOST_SRC) include/mhe/emu_module.h $(wildcard host/common/*.h)
+$(BUILD)/mhe-run$(EXE_EXT): $(RUN_SRC) $(SYS_HOST_OBJ) include/mhe/emu_module.h $(wildcard host/common/*.h)
 	@mkdir -p $(dir $@)
-	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -Iinclude $(SYS_HOST_CFLAGS) -o $@ $(RUN_SRC) $(SYS_HOST_SRC) \
+	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -Iinclude $(SYS_HOST_CFLAGS) -o $@ $(RUN_SRC) $(SYS_HOST_OBJ) \
 	    -pthread $(HOST_LIBS)
+
+# sys_host.c for one device: sys_host-dwarf.o is built with _MOD_DEVICE_DWARF, its functions mhe_sys_host_dwarf_*
+$(BUILD)/msc/sys_host-%.o: $(SYS_HOST_SRC) host/common/msc-shim/sys_host_device.h
+	@mkdir -p $(dir $@)
+	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -fPIC -MMD -MP $(SYS_HOST_CFLAGS) \
+	    -D_MOD_DEVICE_$(shell echo $* | tr a-z A-Z) -DMHE_SYS_HOST_DEVICE=$* \
+	    -include host/common/msc-shim/sys_host_device.h -c $< -o $@
 
 # ---------------------------------------------------------------------------------------------------------------
 # user interface (Qt5 Widgets, as shipped by mod-desktop)
@@ -208,7 +218,7 @@ QT_LIBS   = $(shell $(PKG_CONFIG) --libs Qt5Widgets)
 GUI_CXX_SRC = host/gui/main.cpp host/gui/emulator.cpp host/gui/controls.cpp
 GUI_C_SRC   = host/common/module_loader.c host/common/syscontrol.c host/common/console.c host/common/tcp_serial.c
 GUI_OBJ     = $(patsubst %.cpp,$(BUILD)/gui/%.o,$(GUI_CXX_SRC)) $(patsubst %.c,$(BUILD)/gui/%.o,$(GUI_C_SRC)) \
-              $(if $(SYS_HOST_SRC),$(BUILD)/gui/msc/sys_host.o)
+              $(SYS_HOST_OBJ)
 
 gui: $(BUILD)/mod-hw-emulator$(EXE_EXT)
 
@@ -219,10 +229,6 @@ $(BUILD)/gui/%.o: %.cpp
 $(BUILD)/gui/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -fPIC -MMD -MP -Iinclude $(SYS_HOST_CFLAGS) -c $< -o $@
-
-$(BUILD)/gui/msc/sys_host.o: $(SYS_HOST_SRC)
-	@mkdir -p $(dir $@)
-	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -fPIC -MMD -MP $(SYS_HOST_CFLAGS) -c $< -o $@
 
 $(BUILD)/mod-hw-emulator$(EXE_EXT): $(GUI_OBJ)
 	$(CXX) -o $@ $^ $(QT_LIBS) -pthread $(HOST_LIBS)

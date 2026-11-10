@@ -474,7 +474,7 @@ int main(int argc, char **argv)
         g_console = mhe_console_create(console_reply, NULL);
     if (g_system_channel >= 0 && ! g_tcp[g_system_channel])
     {
-        g_sys = mhe_syscontrol_create(sys_reply, NULL, state_dir, getenv("MHE_SYS_DEBUG") != NULL);
+        g_sys = mhe_syscontrol_create(sys_reply, NULL, state_dir, g_mod->device, getenv("MHE_SYS_DEBUG") != NULL);
         if (mhe_syscontrol_has_host(g_sys))
         {
             const char *tcp = getenv("MOD_SYS_SERIAL_PORT");

@@ -28,8 +28,10 @@ typedef struct mhe_syscontrol mhe_syscontrol;
 /* `reply` sends bytes to the controller system serial */
 typedef void (*mhe_syscontrol_reply)(void *ctx, const uint8_t *data, size_t size);
 
-/* `state_dir` keeps the values across runs; `debug` prints the traffic with mod-host */
-mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, const char *state_dir, int debug);
+/* `state_dir` keeps the values across runs; `device` (mhe_module.device) picks the sys_host.c built for it;
+ * `debug` prints the traffic with mod-host */
+mhe_syscontrol *mhe_syscontrol_create(mhe_syscontrol_reply reply, void *ctx, const char *state_dir,
+                                      const char *device, int debug);
 void mhe_syscontrol_destroy(mhe_syscontrol *sc);
 
 /* bytes the controller sent on its system serial; may hold partial or several messages */
