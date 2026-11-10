@@ -31,9 +31,13 @@ uint32_t CLKPWR_GetCLK(uint8_t ClkType)
     return ClkType == CLKPWR_CLKTYPE_CPU ? SystemCoreClock : PeripheralClock;
 }
 
+/* the pin configuration registers, for firmwares that write them directly (see LPC177x_8x.h) */
+uint32_t emu_iocon_regs[6 * 32];
+
 PINSEL_RET_CODE PINSEL_SetPinFunc(uint8_t portnum, uint8_t pinnum, uint8_t funcnum)
 {
-    (void)portnum; (void)pinnum; (void)funcnum;
+    if (portnum < 6 && pinnum < 32)
+        emu_iocon_regs[portnum * 32 + pinnum] = (emu_iocon_regs[portnum * 32 + pinnum] & ~7u) | (funcnum & 7u);
     return PINSEL_RET_OK;
 }
 

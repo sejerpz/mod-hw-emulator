@@ -19,10 +19,11 @@
  *   chord INPUT INPUT [MS]       press both at once, release both MS later (300): footswitch B and C together
  *                                change the footswitch page on the Dwarf
  *   send CHANNEL TEXT            send TEXT plus the protocol terminator (NUL) on a serial channel
- *   snap FILE.png                write the display (4x, as it looks with its backlight)
+ *   pot INPUT VALUE              set a potentiometer, 0..65535
+ *   snap FILE.png                write the displays side by side (4x, as they look with their backlight)
  *   leds                         print the led colours
  *   quit
- * INPUT is an input name without spaces, case insensitive: knob1, footswitcha, button2…
+ * INPUT is an input name without spaces, case insensitive: knob1, footswitcha, button2, pot3…
  */
 
 #include "mhe/emu_module.h"
@@ -59,9 +60,10 @@ static mhe_tcp_serial *g_tcp[MAX_CHANNELS];
 static uint8_t g_tcp_ids[MAX_CHANNELS];
 static pthread_mutex_t g_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static uint8_t g_frame[64 * 1024];
-static uint16_t g_frame_w, g_frame_h;
-static uint8_t g_brightness;
+#define MAX_DISPLAYS 4
+static uint8_t g_frame[MAX_DISPLAYS][16 * 1024];
+static uint16_t g_frame_w[MAX_DISPLAYS], g_frame_h[MAX_DISPLAYS];
+static uint8_t g_brightness[MAX_DISPLAYS];
 static unsigned g_frames;
 
 static uint8_t g_leds[64][3];
@@ -89,16 +91,16 @@ static void host_display(void *h, uint8_t display, uint16_t w, uint16_t hgt, mhe
                          const uint8_t *bits, uint8_t brightness)
 {
     (void)h; (void)format;
-    if (display != 0)
+    if (display >= MAX_DISPLAYS)
         return;
     const size_t size = (size_t)hgt * ((w + 7u) / 8u);
-    if (size > sizeof(g_frame))
+    if (size > sizeof(g_frame[0]))
         return;
     pthread_mutex_lock(&g_mutex);
-    memcpy(g_frame, bits, size);
-    g_frame_w = w;
-    g_frame_h = hgt;
-    g_brightness = brightness;
+    memcpy(g_frame[display], bits, size);
+    g_frame_w[display] = w;
+    g_frame_h[display] = hgt;
+    g_brightness[display] = brightness;
     g_frames++;
     pthread_mutex_unlock(&g_mutex);
 }
@@ -216,34 +218,49 @@ static int snap(const char *path)
     enum { SCALE = 4, BORDER = 8 };
 
     pthread_mutex_lock(&g_mutex);
-    const unsigned w = g_frame_w, h = g_frame_h;
-    if (! w || ! h)
+    /* the displays that sent a frame, left to right, each in its own border */
+    unsigned iw = BORDER, ih = 0, n = 0;
+    for (unsigned d = 0; d < MAX_DISPLAYS; ++d)
+    {
+        if (! g_frame_w[d] || ! g_frame_h[d])
+            continue;
+        iw += g_frame_w[d] * SCALE + BORDER;
+        if (g_frame_h[d] * SCALE + BORDER * 2 > ih)
+            ih = g_frame_h[d] * SCALE + BORDER * 2;
+        ++n;
+    }
+    if (! n)
     {
         pthread_mutex_unlock(&g_mutex);
         fprintf(stderr, "no frame yet\n");
         return -1;
     }
 
-    const unsigned iw = w * SCALE + BORDER * 2, ih = h * SCALE + BORDER * 2;
     uint8_t *rgb = malloc((size_t)iw * ih * 3u);
-    const float k = 0.25f + 0.75f * (float)g_brightness / 255.0f;
-    const uint8_t lit[3] = { (uint8_t)(235 * k), (uint8_t)(240 * k), (uint8_t)(245 * k) };
     const uint8_t off[3] = { 14, 15, 18 };
     const uint8_t grid[3] = { 8, 9, 11 };
+    for (size_t i = 0; i < (size_t)iw * ih; ++i)
+        memcpy(&rgb[i * 3u], off, 3);
 
-    for (unsigned y = 0; y < ih; ++y)
-        for (unsigned x = 0; x < iw; ++x)
-        {
-            const uint8_t *c = off;
-            if (x >= BORDER && y >= BORDER && x < iw - BORDER && y < ih - BORDER)
+    unsigned x0 = BORDER;
+    for (unsigned d = 0; d < MAX_DISPLAYS; ++d)
+    {
+        const unsigned w = g_frame_w[d], h = g_frame_h[d];
+        if (! w || ! h)
+            continue;
+        const float k = 0.25f + 0.75f * (float)g_brightness[d] / 255.0f;
+        const uint8_t lit[3] = { (uint8_t)(235 * k), (uint8_t)(240 * k), (uint8_t)(245 * k) };
+
+        for (unsigned y = 0; y < h * SCALE; ++y)
+            for (unsigned x = 0; x < w * SCALE; ++x)
             {
-                const unsigned px = (x - BORDER) / SCALE, py = (y - BORDER) / SCALE;
-                const int on = (g_frame[py * ((w + 7u) / 8u) + px / 8u] >> (7u - px % 8u)) & 1;
-                const int edge = ((x - BORDER) % SCALE == SCALE - 1) || ((y - BORDER) % SCALE == SCALE - 1);
-                c = on ? lit : (edge ? grid : off);
+                const unsigned px = x / SCALE, py = y / SCALE;
+                const int on = (g_frame[d][py * ((w + 7u) / 8u) + px / 8u] >> (7u - px % 8u)) & 1;
+                const int edge = (x % SCALE == SCALE - 1) || (y % SCALE == SCALE - 1);
+                memcpy(&rgb[((size_t)(y + BORDER) * iw + x0 + x) * 3u], on ? lit : (edge ? grid : off), 3);
             }
-            memcpy(&rgb[((size_t)y * iw + x) * 3u], c, 3);
-        }
+        x0 += w * SCALE + BORDER;
+    }
     pthread_mutex_unlock(&g_mutex);
 
     const int r = png_write_rgb(path, rgb, iw, ih);
@@ -289,6 +306,8 @@ static int run_command(char *line)
         sleep_ms((unsigned)atoi(argv[1]));
     else if (! strcmp(cmd, "turn") && argc >= 3 && find_input(argv[1], &kind, &id))
         g_mod->encoder_turn(id, atoi(argv[2]));
+    else if (! strcmp(cmd, "pot") && argc >= 3 && find_input(argv[1], &kind, &id) && kind == MHE_INPUT_POT)
+        g_mod->pot_value(id, (uint16_t)atoi(argv[2]));
     else if (! strcmp(cmd, "press") && argc >= 2 && find_input(argv[1], &kind, &id))
         g_mod->input_press(kind, id, 1);
     else if (! strcmp(cmd, "release") && argc >= 2 && find_input(argv[1], &kind, &id))

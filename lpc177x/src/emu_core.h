@@ -83,6 +83,15 @@ typedef void (*emu_uart_tx_fn)(uint8_t uart, const uint8_t *data, size_t size);
 void emu_uart_set_tx(emu_uart_tx_fn fn);
 void emu_uart_init(void);
 
+/* ---- ssp (ssp.c): every frame sent goes to the listeners of its SSP ---- */
+#define EMU_SSP_COUNT 3
+typedef void (*emu_ssp_listener)(void *ctx, uint16_t data);
+void emu_ssp_listen(uint8_t ssp, emu_ssp_listener fn, void *ctx);
+
+/* ---- adc (adc.c) ---- */
+#define EMU_ADC_CHANNELS 8
+void emu_adc_set(uint8_t channel, uint16_t value);   /* 12 bit level of an input, 0..4095 */
+
 /* ---- Cortex-M behaviours (arm_semantics.c) ---- */
 void emu_arm_semantics_install(void);   /* integer division by zero returns 0 inside the module */
 

@@ -132,14 +132,26 @@ their `size` and are only ever appended, like the hmi-widgets API.
 
 `devices/<device>/` holds what is specific to a device:
 
+- `device.mk`: the firmware checkout (`FW_REPO`), its `config-*.h` and its drivers (`make DEVICE=<device>`);
 - `board.c`, compiled with the firmware's own `config-*.h`, that binds pins to chip models and inputs (display
   bus, LED pins, encoder and button pins) — no pin number is copied by hand;
 - `profile.json`: panel description (displays, encoders, buttons, footswitches, pots, LEDs with ids and labels,
   optional skin rectangles), serial channels and their role, mod-ui hardware descriptor to use;
 - `mod-hardware-descriptor.json` with the `hmi_widget_*` keys.
 
-Duo and Duo X: two displays and, on the Duo X, potentiometers (ADC). The ABI already carries a display id and
-pot values; their LPC/ADC and display controller models are added when their firmware is brought in.
+**Duo X** (`devices/duox`, mod-audio `mod-duox-controller`, LPC1777): its sources build unchanged with the
+same adaptations as the Dwarf. Two UC1701 displays share SSP0, one chip select each, with a command/data pin:
+the UC1701 has the ST7565P command set, so `chip_st7565p` models both, the UC1701 through
+`st7565p_chip_create_spi()` fed by the SSP emulation (`ssp.c`, transmit only, never busy). Eight
+potentiometers are ADC channels (`adc.c`, burst mode, the host gives the levels). Two places read or write
+peripheral registers instead of calling the driver API: the potentiometers (`LPC_ADC->DR[ch]`) and the analog
+pin setup (`LPC_IOCON_BASE`); the emulator's `LPC177x_8x.h` wraps the firmware's own and points both to
+blocks the emulation keeps. Four footswitches and three buttons (snapshot, pages, snapshot) are the
+firmware's FOOTSWITCH0..6, two encoders, seven RGB leds.
+
+Checked headless: boot splash across the two displays, `boot` answered with the master volume screen, the
+pages button and its led. Not yet: the GUI (no potentiometer widget, one skin per device), mod-ui with a
+Duo X hardware descriptor, sys_host.c built for the Duo X (it is compiled with `_MOD_DEVICE_DWARF`).
 
 ### UI
 

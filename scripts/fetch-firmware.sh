@@ -2,12 +2,28 @@
 # Fetches the firmware sources the emulator builds, into external/ (not tracked).
 #
 #   scripts/fetch-firmware.sh [DWARF_REPO [BRANCH [PROTO_BRANCH]]]
+#   scripts/fetch-firmware.sh duox [BRANCH]
 #
-# Defaults: the aLabs Dwarf controller with HMI widgets, and the protocol branch that matches it.
+# Defaults: the aLabs Dwarf controller with HMI widgets, and the protocol branch that matches it; the
+# mod-audio Duo X controller (make DEVICE=duox), whose protocol submodule is published as pinned.
 
 set -e
 
 cd "$(dirname "$0")/.."
+
+if [ "$1" = duox ]; then
+    DUOX=external/mod-duox-controller
+    mkdir -p external
+    if [ ! -d "$DUOX/.git" ]; then
+        git clone --branch "${2:-master}" https://github.com/mod-audio/mod-duox-controller.git "$DUOX"
+    else
+        git -C "$DUOX" fetch origin
+        git -C "$DUOX" checkout "${2:-master}"
+    fi
+    git -C "$DUOX" submodule update --init
+    echo "firmware: $(git -C "$DUOX" log --oneline -1)"
+    exit 0
+fi
 
 DWARF_REPO=${1:-https://github.com/sejerpz/mod-dwarf-controller.git}
 DWARF_BRANCH=${2:-feature/hmi-widgets}

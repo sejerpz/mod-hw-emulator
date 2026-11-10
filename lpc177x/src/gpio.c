@@ -208,3 +208,31 @@ void FIO_SetMask(uint8_t portNum, uint32_t bitValue, uint8_t maskValue)
 {
     (void)portNum; (void)bitValue; (void)maskValue;
 }
+
+/* byte access: byte n of the port is pins 8n..8n+7 */
+#define BYTE_BITS(byteNum, bitValue) (byteNum < 4 ? (uint32_t)(bitValue) << (8u * (byteNum)) : 0u)
+
+void FIO_ByteSetDir(uint8_t portNum, uint8_t byteNum, uint8_t bitValue, uint8_t dir)
+{
+    GPIO_SetDir(portNum, BYTE_BITS(byteNum, bitValue), dir);
+}
+
+void FIO_ByteSetMask(uint8_t portNum, uint8_t byteNum, uint8_t bitValue, uint8_t maskValue)
+{
+    (void)portNum; (void)byteNum; (void)bitValue; (void)maskValue;
+}
+
+void FIO_ByteSetValue(uint8_t portNum, uint8_t byteNum, uint8_t bitValue)
+{
+    GPIO_SetValue(portNum, BYTE_BITS(byteNum, bitValue));
+}
+
+void FIO_ByteClearValue(uint8_t portNum, uint8_t byteNum, uint8_t bitValue)
+{
+    GPIO_ClearValue(portNum, BYTE_BITS(byteNum, bitValue));
+}
+
+uint8_t FIO_ByteReadValue(uint8_t portNum, uint8_t byteNum)
+{
+    return byteNum < 4 ? (uint8_t)(GPIO_ReadValue(portNum) >> (8u * byteNum)) : 0;
+}

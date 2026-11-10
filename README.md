@@ -41,6 +41,16 @@ The module tells which sources it was built from (describe, full commit, date): 
 start, the user interface shows it in its title and has a **Firmware** menu with the builds next to the
 module, choosing one restarts the emulator on it.
 
+### MOD Duo X
+
+```sh
+scripts/fetch-firmware.sh duox     # mod-audio/mod-duox-controller into external/
+make DEVICE=duox                   # build/fw-duox-<describe>.so, build/fw-duox.so
+build/mhe-run build/fw-duox.so "wait 6000" "send webgui boot 4 0 0 0 0 0" "wait 3000" "pot pot1 30000" "snap duox.png"
+```
+
+Headless only for now: `snap` writes both displays side by side, `pot` sets a potentiometer.
+
 ## Try it headless
 
 ```sh
