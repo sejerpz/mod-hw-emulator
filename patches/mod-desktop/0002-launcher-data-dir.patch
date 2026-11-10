@@ -1,0 +1,74 @@
+From: Andrea Del Signore <sejerpz@gmail.com>
+Subject: [PATCH] Keep a MOD_DATA_DIR given to the launcher
+
+The launcher always put its data (pedalboards, user files, keys, its log) in Documents/MOD Desktop. With
+MOD_DATA_DIR set when it starts, it uses that folder instead, so a portable copy keeps its data next to it
+and does not share it with an installed MOD Desktop. Without the variable nothing changes.
+---
+--- a/src/systray/utils.cpp
++++ b/src/systray/utils.cpp
+@@ -112,24 +112,40 @@
+    #endif
+ 
+     // get and set directory to our documents and settings, under "user documents"; also make sure it exists
++    // (a MOD_DATA_DIR already set is kept: a portable copy has its data next to it)
+    #ifdef _WIN32
+     WCHAR dataDir[MAX_PATH] = {};
+-    SHGetSpecialFolderPathW(nullptr, dataDir, CSIDL_MYDOCUMENTS, false);
+-
++    const DWORD presetLen = GetEnvironmentVariableW(L"MOD_DATA_DIR", dataDir, MAX_PATH);
++
++    if (presetLen == 0 || presetLen >= MAX_PATH)
++    {
++        std::memset(dataDir, 0, sizeof(dataDir));
++        SHGetSpecialFolderPathW(nullptr, dataDir, CSIDL_MYDOCUMENTS, false);
++
++        _wmkdir(dataDir);
++        std::wcsncat(dataDir, L"\\MOD Desktop", MAX_PATH - 1);
++    }
+     _wmkdir(dataDir);
+-    std::wcsncat(dataDir, L"\\MOD Desktop", MAX_PATH - 1);
+-    _wmkdir(dataDir);
+ 
+     SetEnvironmentVariableW(L"MOD_DATA_DIR", dataDir);
+    #else
+     char dataDir[PATH_MAX] = {};
+ 
+-    // NOTE a generic implementation is a bit complex, let Qt do it for us this time
+-    const QByteArray docsDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toUtf8());
+-    std::strncpy(dataDir, docsDir.constData(), PATH_MAX - 1);
+-
+-    mkdir(dataDir, 0777);
+-    std::strncat(dataDir, "/MOD Desktop", PATH_MAX - 1);
++    const char* const preset = std::getenv("MOD_DATA_DIR");
++
++    if (preset != nullptr && *preset != '\0')
++    {
++        std::strncpy(dataDir, preset, PATH_MAX - 1);
++    }
++    else
++    {
++        // NOTE a generic implementation is a bit complex, let Qt do it for us this time
++        const QByteArray docsDir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation).toUtf8());
++        std::strncpy(dataDir, docsDir.constData(), PATH_MAX - 1);
++
++        mkdir(dataDir, 0777);
++        std::strncat(dataDir, "/MOD Desktop", PATH_MAX - 1);
++    }
+     mkdir(dataDir, 0777);
+ 
+     setenv("MOD_DATA_DIR", dataDir, 1);
+--- a/src/systray/mod-desktop.hpp
++++ b/src/systray/mod-desktop.hpp
+@@ -666,7 +666,10 @@
+     // persistent copy of what the launcher starts and what jackd/mod-host print, to diagnose without a debug run
+     static void appendLauncherLog(const QString& text)
+     {
+-        const QString dir(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/MOD Desktop");
++        // the data folder the launcher set up (Documents/MOD Desktop unless MOD_DATA_DIR was given)
++        QString dir(qEnvironmentVariable("MOD_DATA_DIR"));
++        if (dir.isEmpty())
++            dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/MOD Desktop";
+         QDir().mkpath(dir);
+         QFile f(dir + "/launcher.log");
+         if (f.open(QIODevice::Append | QIODevice::Text))
