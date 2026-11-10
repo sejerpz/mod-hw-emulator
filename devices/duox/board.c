@@ -46,38 +46,39 @@ static const mhe_display_info g_displays[] = {
     { 1, DISPLAY_W, DISPLAY_H, MHE_PIXEL_MONO1 },   /* right */
 };
 
-/* FOOTSWITCH0..3 of the firmware are the footswitches, FOOTSWITCH4..6 the buttons above them */
+/* FOOTSWITCH0..3 of the firmware are the four buttons under the knobs (footswitches for the firmware),
+ * FOOTSWITCH4..6 the snapshot and page buttons; the names are those of the skin (devices/duox/skin) */
 #define N_FOOTSWITCHES FOOTSWITCHES_ACTUATOR_COUNT
 #define N_BUTTONS      (FOOTSWITCHES_COUNT - FOOTSWITCHES_ACTUATOR_COUNT)
 
 static const mhe_input_info g_inputs[] = {
-    { 0, MHE_INPUT_ENCODER,    "Knob 1" },
-    { 1, MHE_INPUT_ENCODER,    "Knob 2" },
-    { 0, MHE_INPUT_FOOTSWITCH, "Footswitch 1" },
-    { 1, MHE_INPUT_FOOTSWITCH, "Footswitch 2" },
-    { 2, MHE_INPUT_FOOTSWITCH, "Footswitch 3" },
-    { 3, MHE_INPUT_FOOTSWITCH, "Footswitch 4" },
+    { 0, MHE_INPUT_ENCODER,    "Endless Knob 1" },
+    { 1, MHE_INPUT_ENCODER,    "Endless Knob 2" },
+    { 0, MHE_INPUT_FOOTSWITCH, "Button 1" },
+    { 1, MHE_INPUT_FOOTSWITCH, "Button 2" },
+    { 2, MHE_INPUT_FOOTSWITCH, "Button 3" },
+    { 3, MHE_INPUT_FOOTSWITCH, "Button 4" },
     { 0, MHE_INPUT_BUTTON,     "Snapshot 1" },
-    { 1, MHE_INPUT_BUTTON,     "Pages" },
+    { 1, MHE_INPUT_BUTTON,     "Page" },
     { 2, MHE_INPUT_BUTTON,     "Snapshot 2" },
-    { 0, MHE_INPUT_POT,        "Pot 1" },
-    { 1, MHE_INPUT_POT,        "Pot 2" },
-    { 2, MHE_INPUT_POT,        "Pot 3" },
-    { 3, MHE_INPUT_POT,        "Pot 4" },
-    { 4, MHE_INPUT_POT,        "Pot 5" },
-    { 5, MHE_INPUT_POT,        "Pot 6" },
-    { 6, MHE_INPUT_POT,        "Pot 7" },
-    { 7, MHE_INPUT_POT,        "Pot 8" },
+    { 0, MHE_INPUT_POT,        "Knob 1" },
+    { 1, MHE_INPUT_POT,        "Knob 2" },
+    { 2, MHE_INPUT_POT,        "Knob 3" },
+    { 3, MHE_INPUT_POT,        "Knob 4" },
+    { 4, MHE_INPUT_POT,        "Knob 5" },
+    { 5, MHE_INPUT_POT,        "Knob 6" },
+    { 6, MHE_INPUT_POT,        "Knob 7" },
+    { 7, MHE_INPUT_POT,        "Knob 8" },
 };
 
 /* LED0..3 are LED4..7 of the board (the footswitches), LED4..6 are LED1..3 (the buttons) */
 static const mhe_led_info g_leds[] = {
-    { 0, "Footswitch 1" },
-    { 1, "Footswitch 2" },
-    { 2, "Footswitch 3" },
-    { 3, "Footswitch 4" },
+    { 0, "Button 1" },
+    { 1, "Button 2" },
+    { 2, "Button 3" },
+    { 3, "Button 4" },
     { 4, "Snapshot 1" },
-    { 5, "Pages" },
+    { 5, "Page" },
     { 6, "Snapshot 2" },
 };
 

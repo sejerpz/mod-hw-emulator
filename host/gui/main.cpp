@@ -8,14 +8,15 @@
  * --state names the state folder; by default mhe-state/<tag of the firmware>. The Firmware menu restarts on
  * another build of the same device found next to MODULE.
  *
- * The panel is built from what the module declares (displays, encoders, buttons, footswitches, leds). With
- * a skin of the device (a picture and the rectangle of each control, see findSkin) SkinLayout puts them on
- * the picture; without one, or with --simple, SimpleLayout stacks them: display on top, encoders below it,
- * then buttons, then footswitches.
+ * The panel is built from what the module declares (displays, encoders, buttons, footswitches,
+ * potentiometers, leds). With a skin of the device (a picture and the rectangle of each control, see findSkin)
+ * SkinLayout puts them on the picture; without one, or with --simple, SimpleLayout stacks them: displays side
+ * by side on top, encoders below them, then buttons, potentiometers (rows of four), footswitches.
  *
  * Keyboard: Q/A W/S E/D turn encoders 1-3 (anticlockwise/clockwise), 1 2 3 push them,
- *           Z X C footswitches in panel order, F1-F4 buttons; keys pressed together go down together.
- * Mouse:    Ctrl+click arms a footswitch or button: the next click on another one presses both at once.
+ *           Z X C V footswitches in panel order, F1-F4 buttons; keys pressed together go down together.
+ * Mouse:    Ctrl+click arms a footswitch or button: the next click on another one presses both at once;
+ *           wheel or drag turns a potentiometer, a double click puts it in the middle.
  */
 
 #include "controls.h"
@@ -57,6 +58,7 @@ struct Skin {
     QPixmap picture;
     int scale = 1;      /* picture pixels per window pixel at the nominal size */
     std::map<QString, QRect> rects;
+    QStringList square; /* footswitches drawn as square buttons ("square" in the JSON) */
 };
 
 /*
@@ -69,7 +71,10 @@ bool loadSkin(const QString &dir, const QString &device, Skin &skin)
     QFile file(QDir(dir).filePath(device + QStringLiteral("-panel.json")));
     if (! file.open(QIODevice::ReadOnly))
         return false;
-    const QJsonObject skins = QJsonDocument::fromJson(file.readAll()).object().value(QStringLiteral("skins")).toObject();
+    const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+    const QJsonObject skins = root.value(QStringLiteral("skins")).toObject();
+    for (const QJsonValue &name : root.value(QStringLiteral("square")).toArray())
+        skin.square << name.toString();
 
     QString best;
     int bestWidth = 0, smallestWidth = 0;
@@ -172,6 +177,14 @@ public:
                 (foot ? m_footswitches : m_buttons).push_back(w);
                 m_byName[name] = w;
             }
+            else if (in.kind == MHE_INPUT_POT)
+            {
+                auto *w = new PotWidget(name, central);
+                const uint8_t id = in.id;
+                w->onChange = [this, id](uint16_t value) { m_emulator.pot(id, value); };
+                m_pots.push_back(w);
+                m_byName[name] = w;
+            }
         }
 
         /* a led goes where the skin draws "LED <name>", else on the control of the same name, else on its
@@ -216,8 +229,11 @@ public:
             simpleLayout(central, loose);
         setCentralWidget(central);
 
-        statusBar()->showMessage(QStringLiteral("Q/A W/S E/D turn, 1 2 3 push, Z X C footswitches, F1-F4 buttons; "
-                                                "Ctrl+click arms a switch to press it with the next one"));
+        statusBar()->showMessage(m_pots.empty()
+            ? QStringLiteral("Q/A W/S E/D turn, 1 2 3 push, Z X C footswitches, F1-F4 buttons; "
+                             "Ctrl+click arms a switch to press it with the next one")
+            : QStringLiteral("Q/A W/S turn, 1 2 push, Z X C V footswitches, F1-F3 buttons; wheel or drag on a "
+                             "potentiometer, double click centres it"));
 
         /* switch keys pressed close together go down together, see key() */
         m_keyChord.setSingleShot(true);
@@ -225,15 +241,17 @@ public:
         connect(&m_keyChord, &QTimer::timeout, this, [this]() { pressPendingKeys(); });
     }
 
-    /* SimpleLayout: display on top, then encoders, buttons and loose leds, footswitches */
+    /* SimpleLayout: displays on top, then encoders, buttons and loose leds, potentiometers, footswitches */
     void simpleLayout(QWidget *central, const std::vector<LedWidget *> &leds)
     {
         auto *root = new QVBoxLayout(central);
         root->setContentsMargins(24, 24, 24, 24);
         root->setSpacing(18);
 
+        auto *displays = new QHBoxLayout();
         for (const auto &lcd : m_lcds)
-            root->addWidget(lcd.second, 1);
+            displays->addWidget(lcd.second, 1);
+        root->addLayout(displays, 1);
 
         auto *encoders = new QHBoxLayout();
         auto *buttons = new QHBoxLayout();
@@ -249,6 +267,13 @@ public:
 
         root->addLayout(encoders);
         root->addLayout(buttons);
+        for (size_t i = 0; i < m_pots.size(); i += 4)
+        {
+            auto *row = new QHBoxLayout();
+            for (size_t j = i; j < i + 4 && j < m_pots.size(); ++j)
+                row->addWidget(m_pots[j]);
+            root->addLayout(row);
+        }
         root->addLayout(footswitches);
 
         /* the display at 4x by default */
@@ -270,12 +295,18 @@ public:
             if (auto *e = dynamic_cast<EncoderWidget *>(named.second))
                 e->setSkinned(true);
             else if (auto *s = dynamic_cast<SwitchWidget *>(named.second))
+            {
                 s->setSkinned(true);
+                s->setSquare(skin.square.contains(named.first));
+            }
+            else if (auto *pot = dynamic_cast<PotWidget *>(named.second))
+                pot->setSkinned(true);
             panel.place(named.second, spot->second);
         }
 
-        /* one display for now: the first one goes on "display", any other on "display N"; it takes the whole
-         * window around it ("display_window"), so the glass shows no frame of the picture */
+        /* the displays in the order of their ids: the first one goes on "display", the next on "display 2"
+         * and so on; each takes the whole window around it ("display_window"), so the glass shows no frame
+         * of the picture */
         int n = 0;
         for (const auto &lcd : m_lcds)
         {
@@ -383,7 +414,7 @@ private:
         static const int turnKeys[][2] = { { Qt::Key_Q, Qt::Key_A }, { Qt::Key_W, Qt::Key_S },
                                            { Qt::Key_E, Qt::Key_D } };
         static const int pushKeys[] = { Qt::Key_1, Qt::Key_2, Qt::Key_3 };
-        static const int footKeys[] = { Qt::Key_Z, Qt::Key_X, Qt::Key_C };
+        static const int footKeys[] = { Qt::Key_Z, Qt::Key_X, Qt::Key_C, Qt::Key_V };
         static const int buttonKeys[] = { Qt::Key_F1, Qt::Key_F2, Qt::Key_F3, Qt::Key_F4 };
 
         for (size_t i = 0; i < 3 && i < m_encoders.size(); ++i)
@@ -396,7 +427,7 @@ private:
                 m_encoders[i]->onPress(down);
         }
         SwitchWidget *s = nullptr;
-        for (size_t i = 0; i < 3 && i < m_footswitches.size(); ++i)
+        for (size_t i = 0; i < 4 && i < m_footswitches.size(); ++i)
             if (k == footKeys[i])
                 s = m_footswitches[i];
         for (size_t i = 0; i < 4 && i < m_buttons.size(); ++i)
@@ -494,6 +525,7 @@ private:
     std::vector<EncoderWidget *> m_encoders;
     std::vector<SwitchWidget *> m_footswitches;
     std::vector<SwitchWidget *> m_buttons;
+    std::vector<PotWidget *> m_pots;
     std::map<QString, QWidget *> m_byName;
     std::map<uint8_t, std::function<void(const QColor &)>> m_ledSetters;
 };

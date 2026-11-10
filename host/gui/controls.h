@@ -72,6 +72,37 @@ private:
     int m_wheelRest = 0;
 };
 
+/* a potentiometer: 270 degrees of travel from 7 to 5 o'clock, wheel or vertical drag turns it, a double
+ * click puts it back in the middle */
+class PotWidget : public QWidget
+{
+public:
+    explicit PotWidget(const QString &name, QWidget *parent = nullptr);
+
+    /* 0..65535, called on every change */
+    std::function<void(uint16_t value)> onChange;
+
+    uint16_t value() const { return m_value; }
+    void setValue(int value);
+    QSize sizeHint() const override;
+    void setSkinned(bool skinned);
+
+protected:
+    void paintEvent(QPaintEvent *) override;
+    void wheelEvent(QWheelEvent *) override;
+    void mousePressEvent(QMouseEvent *) override;
+    void mouseMoveEvent(QMouseEvent *) override;
+    void mouseDoubleClickEvent(QMouseEvent *) override;
+
+private:
+    bool m_skinned = false;
+    QString m_name;
+    uint16_t m_value = 32768;   /* the middle, as the emulated ADC starts */
+    int m_dragY = 0;
+    int m_dragValue = 0;
+    int m_wheelRest = 0;
+};
+
 /* a footswitch or a button, with its led */
 class SwitchWidget : public QWidget
 {
@@ -90,6 +121,8 @@ public:
 
     QSize sizeHint() const override;
     void setSkinned(bool skinned);
+    /* skinned: drawn as a square button even if it is a footswitch (the Duo X buttons) */
+    void setSquare(bool square) { m_square = square; }
 
 protected:
     void paintEvent(QPaintEvent *) override;
@@ -98,6 +131,7 @@ protected:
 
 private:
     bool m_skinned = false;
+    bool m_square = false;
     QString m_name;
     bool m_footswitch;
     QColor m_led = Qt::black;

@@ -258,6 +258,119 @@ void EncoderWidget::mouseReleaseEvent(QMouseEvent *)
     update();
 }
 
+/* ---- potentiometer ---- */
+
+PotWidget::PotWidget(const QString &name, QWidget *parent)
+    : QWidget(parent), m_name(name)
+{
+    setCursor(Qt::OpenHandCursor);
+    setToolTip(name + QStringLiteral(": wheel or drag to turn, double click for the middle"));
+    setMinimumSize(sizeHint());
+}
+
+QSize PotWidget::sizeHint() const
+{
+    return QSize(80, 96);
+}
+
+void PotWidget::setSkinned(bool skinned)
+{
+    m_skinned = skinned;
+    setMinimumSize(skinned ? QSize(8, 8) : sizeHint());
+}
+
+void PotWidget::setValue(int value)
+{
+    value = std::max(0, std::min(65535, value));
+    if (value == m_value)
+        return;
+    m_value = static_cast<uint16_t>(value);
+    setToolTip(QStringLiteral("%1: %2% (wheel or drag to turn, double click for the middle)")
+                   .arg(m_name).arg(m_value * 100 / 65535));
+    update();
+    if (onChange)
+        onChange(m_value);
+}
+
+void PotWidget::paintEvent(QPaintEvent *)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    /* travel: -135 degrees (7 o'clock) to +135 (5 o'clock), clockwise from 12 o'clock */
+    const double t = (-135.0 + 270.0 * m_value / 65535.0) * M_PI / 180.0;
+    const QPointF u(std::sin(t), -std::cos(t));
+    const int spanQt = -static_cast<int>(270.0 * 16 * m_value / 65535.0);
+
+    /* skinned: the rectangle is the collar of the knob in the picture (radius R, see mkskin.py of the Duo X):
+     * the travel is lit on the ring at 0.84 R, the pointer drawn on the knob (0.66 R) */
+    if (m_skinned)
+    {
+        const QPointF c(width() / 2.0, height() / 2.0);
+        const double R = std::min(width(), height()) / 2.0;
+        const QRectF ring(c.x() - R * 0.84, c.y() - R * 0.84, R * 1.68, R * 1.68);
+
+        p.setPen(QPen(QColor(0xd6, 0xd8, 0xdc), R * 0.07, Qt::SolidLine, Qt::FlatCap));
+        p.drawArc(ring, 225 * 16, spanQt);
+
+        p.setPen(QPen(QColor(0xe8, 0xea, 0xee), R * 0.07, Qt::SolidLine, Qt::RoundCap));
+        p.drawLine(c + u * R * 0.2, c + u * R * 0.58);
+        return;
+    }
+
+    const int d = std::min(width(), height() - 20) - 16;
+    const QRectF knob((width() - d) / 2.0, 8, d, d);
+    const QPointF c = knob.center();
+
+    /* the whole travel, then the part up to the value */
+    p.setBrush(Qt::NoBrush);
+    p.setPen(QPen(QColor(60, 62, 68), 3, Qt::SolidLine, Qt::FlatCap));
+    p.drawArc(knob.adjusted(-4, -4, 4, 4), 225 * 16, -270 * 16);
+    p.setPen(QPen(kLabel, 3, Qt::SolidLine, Qt::FlatCap));
+    p.drawArc(knob.adjusted(-4, -4, 4, 4), 225 * 16, spanQt);
+
+    QRadialGradient g(c - QPointF(d / 6.0, d / 6.0), d * 0.7);
+    g.setColorAt(0, QColor(70, 72, 78));
+    g.setColorAt(1, QColor(24, 25, 28));
+    p.setPen(Qt::NoPen);
+    p.setBrush(g);
+    p.drawEllipse(knob.adjusted(3, 3, -3, -3));
+
+    p.setPen(QPen(QColor(230, 232, 236), 3, Qt::SolidLine, Qt::RoundCap));
+    p.drawLine(c + u * d * 0.12, c + u * d * 0.4);
+
+    drawLabel(p, rect(), m_name);
+}
+
+void PotWidget::wheelEvent(QWheelEvent *e)
+{
+    /* a notch of the wheel is 1/64 of the travel */
+    m_wheelRest += e->angleDelta().y();
+    const int notches = m_wheelRest / 120;
+    m_wheelRest %= 120;
+    if (notches)
+        setValue(m_value + notches * 1024);
+    e->accept();
+}
+
+void PotWidget::mousePressEvent(QMouseEvent *e)
+{
+    m_dragY = e->pos().y();
+    m_dragValue = m_value;
+    setCursor(Qt::ClosedHandCursor);
+}
+
+void PotWidget::mouseMoveEvent(QMouseEvent *e)
+{
+    /* up turns clockwise; the whole travel in 200 pixels */
+    setValue(m_dragValue + (m_dragY - e->pos().y()) * 65535 / 200);
+}
+
+void PotWidget::mouseDoubleClickEvent(QMouseEvent *)
+{
+    setValue(32768);
+}
+
 /* ---- switch ---- */
 
 SwitchWidget::SwitchWidget(const QString &name, bool footswitch, QWidget *parent)
@@ -309,12 +422,13 @@ void SwitchWidget::paintEvent(QPaintEvent *)
         const QPointF c = r.center();
         const double R = std::min(r.width(), r.height()) / 2.0;
         const double round = std::min(r.width(), r.height()) * 0.14;
+        const bool nut = m_footswitch && ! m_square;
 
         if (m_pressed)
         {
             p.setPen(Qt::NoPen);
             p.setBrush(QColor(0, 0, 0, 110));
-            if (m_footswitch)
+            if (nut)
                 p.drawEllipse(c, R * 0.76, R * 0.76);
             else
                 p.drawRoundedRect(r, round, round);
@@ -323,7 +437,7 @@ void SwitchWidget::paintEvent(QPaintEvent *)
         {
             p.setPen(QPen(QColor(255, 190, 40), std::max(2.0, R * 0.06), Qt::DashLine));
             p.setBrush(Qt::NoBrush);
-            if (m_footswitch)
+            if (nut)
                 p.drawEllipse(c, R * 0.95, R * 0.95);
             else
                 p.drawRoundedRect(r.adjusted(1, 1, -1, -1), round, round);

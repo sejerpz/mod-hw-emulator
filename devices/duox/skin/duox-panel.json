@@ -1,5 +1,11 @@
 {
  "source": "MOD Duo X controller board pick and place (mod-audio/mod-hw-duoX), own drawing",
+ "square": [
+  "Button 1",
+  "Button 2",
+  "Button 3",
+  "Button 4"
+ ],
  "skins": {
   "duox-panel@1x.png": {
    "size": [

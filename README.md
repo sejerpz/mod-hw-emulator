@@ -46,10 +46,16 @@ module, choosing one restarts the emulator on it.
 ```sh
 scripts/fetch-firmware.sh duox     # mod-audio/mod-duox-controller into external/
 make DEVICE=duox                   # build/fw-duox-<describe>.so, build/fw-duox.so
-build/mhe-run build/fw-duox.so "wait 6000" "send webgui boot 4 0 0 0 0 0" "wait 3000" "pot pot1 30000" "snap duox.png"
+build/mhe-run build/fw-duox.so "wait 6000" "send webgui boot 4 0 0 0 0 0" "wait 3000" "pot knob1 30000" "snap duox.png"
+build/mod-hw-emulator build/fw-duox.so
 ```
 
-Headless only for now: `snap` writes both displays side by side, `pot` sets a potentiometer.
+`snap` writes both displays side by side, `pot` sets a potentiometer (0..65535). The controls take the names
+of the firmware and of the Duo X skin (`devices/duox/skin/`): `Endless Knob 1/2`, `Snapshot 1`, `Page`,
+`Snapshot 2`, `Knob 1..8` (the potentiometers), `Button 1..4` (the buttons under them). In the user
+interface the potentiometers turn with the wheel or a vertical drag, a double click puts one in the middle;
+Q/A W/S turn the endless knobs, 1 2 push them, Z X C V are the buttons 1-4, F1-F3 Snapshot 1, Page,
+Snapshot 2. Not yet with mod-ui: see "Device profile" in [DESIGN.md](DESIGN.md).
 
 ## Try it headless
 

@@ -177,6 +177,8 @@ def rects(k):
 
 
 json.dump({'source': 'MOD Duo X controller board pick and place (mod-audio/mod-hw-duoX), own drawing',
+           # footswitches for the firmware, square buttons in the picture
+           'square': [f'Button {i+1}' for i in range(len(POTS_X))],
            'skins': {f'duox-panel@{m}x.png': {'size': [W*PXMM*m, H*PXMM*m], 'px_per_mm': PXMM*m,
                                                'rects_xywh': rects(PXMM*m)} for m in (1, 2)}},
           open(OUT_JSON, 'w'), indent=1)

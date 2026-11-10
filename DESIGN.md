@@ -146,21 +146,26 @@ the UC1701 has the ST7565P command set, so `chip_st7565p` models both, the UC170
 potentiometers are ADC channels (`adc.c`, burst mode, the host gives the levels). Two places read or write
 peripheral registers instead of calling the driver API: the potentiometers (`LPC_ADC->DR[ch]`) and the analog
 pin setup (`LPC_IOCON_BASE`); the emulator's `LPC177x_8x.h` wraps the firmware's own and points both to
-blocks the emulation keeps. Four footswitches and three buttons (snapshot, pages, snapshot) are the
-firmware's FOOTSWITCH0..6, two encoders, seven RGB leds.
+blocks the emulation keeps. The four buttons under the knobs (footswitches for the firmware) and the three
+between the endless knobs (Snapshot 1, Page, Snapshot 2) are the firmware's FOOTSWITCH0..6, two encoders,
+seven RGB leds; the names are those of the skin (`devices/duox/skin`), which lists the four footswitches as
+`square`, drawn as buttons.
 
-Checked headless: boot splash across the two displays, `boot` answered with the master volume screen, the
-pages button and its led. Not yet: the GUI (no potentiometer widget, one skin per device), mod-ui with a
-Duo X hardware descriptor, sys_host.c built for the Duo X (it is compiled with `_MOD_DEVICE_DWARF`).
+Checked: boot splash across the two displays, `boot` answered with the master volume screen, the page button
+and its led, headless and in the user interface (skin and `--simple`). Not yet: mod-ui with a Duo X hardware
+descriptor, sys_host.c built for the Duo X (it is compiled with `_MOD_DEVICE_DWARF`), the jack leds of the
+skin (Input/Output 1/2): the device profile has no led for them, they stay off.
 
 ### UI
 
 - Controls are widgets bound to logical ids: LCD (scaled framebuffer, pixel grid, backlight colour), encoder
-  (wheel/drag to turn, click to push), button/footswitch with its LED, pot.
+  (wheel/drag to turn, click to push), button/footswitch with its LED, pot (270 degrees, wheel/drag, double
+  click for the middle).
 - The layout is separate from the controls: `SkinLayout` (device picture as background, each control at the
-  rectangle of its name in `devices/DEVICE/skin/DEVICE-panel.json`, leds at "LED name"; skinned controls draw
-  only what changes: knob pointer, led colours, pressed and armed switches) and `SimpleLayout` (display on
-  top, encoders, then buttons and footswitches) for devices with no skin or `--simple`.
+  rectangle of its name in `devices/DEVICE/skin/DEVICE-panel.json`, leds at "LED name", displays at
+  "display", "display 2"… in the order of their ids; skinned controls draw only what changes: knob and pot
+  pointers, led colours, pressed and armed switches) and `SimpleLayout` (displays side by side on top,
+  encoders, then buttons, pots in rows of four, footswitches) for devices with no skin or `--simple`.
 - Keyboard shortcuts for every control.
 - Toolkit: Qt5 Widgets (already shipped by mod-desktop). A headless runner (`mhe-run`) exists for tests and
   for CI: it can dump the display as PBM/PNG and drive inputs from a script.
@@ -208,7 +213,7 @@ Duo X hardware descriptor, sys_host.c built for the Duo X (it is compiled with `
    `mhe-desktop.cmd` over MOD Desktop built from mod-desktop main (the 0.14 release): mod-ui on the HMI line
    (9900), mod-host on `/sys_msgs` (9901), the pedalboard on the emulated display. Plugin widgets there: not
    tried (MOD Desktop's mod-ui has no Display dialog). Linux overlay: to do.
-6. **Done** — Skin layout, Dwarf panel picture. Duo X and Duo profiles: to do.
+6. **Done** — Skin layout, Dwarf and Duo X panel pictures, Duo X profile (without mod-ui yet). Duo: to do.
 
 ## What the spike taught
 
