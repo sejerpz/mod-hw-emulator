@@ -11,6 +11,10 @@
 
 #include <cmath>
 
+#ifndef M_PI   /* not in strict C++ (MinGW's -std=c++17) */
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace {
 
 const QColor kPanel(38, 40, 44);

@@ -32,6 +32,11 @@ endif
 
 COMMON_CFLAGS = -D_GNU_SOURCE -std=gnu11 -O2 -g -pthread -fPIC -Wall -MMD -MP
 MODULE_LDFLAGS = -shared -pthread
+ifeq ($(WINDOWS),true)
+# the GCC runtimes go in each file; libwinpthread-1.dll stays one, shared by the host and the modules
+MODULE_LDFLAGS += -static-libgcc
+HOST_LIBS += -static-libgcc -static-libstdc++
+endif
 ifneq ($(WINDOWS),true)
 COMMON_CFLAGS += -fvisibility=hidden
 endif

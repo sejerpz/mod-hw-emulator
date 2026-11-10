@@ -283,7 +283,11 @@ static int run_command(char *line)
         return 1;
     if (! strcmp(cmd, "break")) /* stops in a debugger: inspect the firmware tasks */
     {
+#ifdef _WIN32
+        __debugbreak();
+#else
         raise(SIGTRAP);
+#endif
         return 0;
     }
     if (! strcmp(cmd, "wait") && argc >= 2)
