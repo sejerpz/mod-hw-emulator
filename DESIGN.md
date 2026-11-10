@@ -210,6 +210,11 @@ with mod-ui and a pedalboard, sys_host.c for the Duo X with mod-host. The jack l
   then the copy. The files are built for one mod-desktop release (`scripts/package-win64.sh`, in mod-desktop's
   CI container with its PawPaw), so mod-host links the jack and lilv it is loaded with; mod-ui stays the
   release's own but for the files `patches/mod-ui` changes, whose originals are checked by hash.
+- **Standalone on Windows**: with no Windows release of MOD Desktop 0.14, the package can instead hold a whole
+  MOD Desktop built from `main` with those files laid over it at build time (`package-win64.sh --standalone`).
+  The launcher keeps a `MOD_DATA_DIR` given to it (`patches/mod-desktop/0002`), so the zip keeps its data next
+  to it and never mixes with an installed MOD Desktop; the descriptor is still written at each start, from
+  MOD Desktop's own one kept in `devices\mod-desktop.json`, for the device chosen.
 
 ## Milestones
 

@@ -173,6 +173,15 @@ mhe-desktop.cmd -Device duox         :: the Duo X; each device keeps its state i
 The package is built in mod-desktop's CI container (ubuntu:22.04) with mod-desktop's PawPaw for win64, so
 mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top of the script.
 
+### Standalone zip
+
+There is no Windows release of MOD Desktop 0.14. `package-win64.sh --standalone` packs a whole MOD Desktop built
+from mod-desktop `main` with the files above already in it (`mod-desktop\`), and the launcher keeps its data
+(pedalboards, user files, its log) in `data\` next to it rather than in `Documents\MOD Desktop`
+([patches/mod-desktop](patches/mod-desktop)). Unzip it anywhere and run `mhe-desktop.cmd` (`-Device duox`,
+`-SharedData` for the data of an installed MOD Desktop). `SOURCES.txt` lists the revisions it was built from; it
+is not an official MOD Audio build (the Tone3000 integration has no client id).
+
 ## Layout
 
 | Path | What |

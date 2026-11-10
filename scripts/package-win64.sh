@@ -2,7 +2,12 @@
 # Builds the Windows package of mod-hw-emulator: the emulator with its user interface, and the files mhe-desktop.cmd
 # lays over a MOD Desktop installation.
 #
-#   scripts/package-win64.sh MOD_DESKTOP MOD_HOST [OUT]
+#   scripts/package-win64.sh [--standalone] MOD_DESKTOP MOD_HOST [OUT]
+#
+# --standalone puts the whole MOD Desktop of MOD_DESKTOP/build in the package, with the overlay already laid over it
+# (mod-desktop/ in place of mod-desktop-overlay/), for where there is no MOD Desktop release to install: the zip
+# runs as it is, keeps its data in data/, and SOURCES.txt says what it was built from. The revisions of trees that
+# are not git checkouts come from MHE_REV, MOD_HOST_REV and MSC_REV.
 #
 # MOD_DESKTOP is a mod-desktop checkout at the release the package is for (git checkout 0.0.13, say) whose PawPaw
 # dependencies are built for win64, as mod-desktop's CI does it (ubuntu:22.04):
@@ -20,10 +25,16 @@
 
 set -e
 
+STANDALONE=false
+if [ "$1" = --standalone ]; then
+    STANDALONE=true
+    shift
+fi
+
 EMU=$(cd "$(dirname "$0")/.." && pwd)
 MOD_DESKTOP=$(cd "$1" && pwd)
 MOD_HOST=$(cd "$2" && pwd)
-OUT=$(realpath -m "${3:-mod-hw-emulator-win64.zip}")
+OUT=$(realpath -m "${3:-$($STANDALONE && echo mod-hw-emulator-desktop-win64.zip || echo mod-hw-emulator-win64.zip)}")
 RUN="$MOD_DESKTOP/utils/run.sh win64"
 
 STAGE=$(mktemp -d)
@@ -102,6 +113,38 @@ done
 cp "$EMU/scripts/mhe-desktop.ps1" "$PKG/"
 sed 's/$/\r/' "$EMU/scripts/mhe-desktop.cmd" > "$PKG/mhe-desktop.cmd"
 cp "$EMU/LICENSE" "$PKG/"
+
+if $STANDALONE; then
+    # MOD Desktop as it is built (symlinks resolved) with the overlay over it; mhe-desktop writes the
+    # descriptor of the device at each start, from MOD Desktop's own one kept in devices/
+    cp -rL "$MOD_DESKTOP/build" "$PKG/mod-desktop"
+    cp "$PKG/mod-desktop/mod-hardware-descriptor.json" "$PKG/devices/mod-desktop.json"
+    (cd "$OVL" && find . -type f ! -name base-sha256.txt) | while read -r f; do
+        mkdir -p "$PKG/mod-desktop/$(dirname "$f")"
+        cp "$OVL/$f" "$PKG/mod-desktop/$f"
+    done
+    rm -rf "$OVL"
+    cp "$MOD_DESKTOP/LICENSE" "$PKG/LICENSE-mod-desktop.txt"
+
+    rev() { git -C "$1" rev-parse HEAD 2> /dev/null || echo "${2:-unknown}"; }
+    describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo unknown; }
+    {
+        echo "mod-hw-emulator with MOD Desktop, for Windows (x86_64)"
+        echo
+        echo "Built from these sources; each is free software under its own license (GPL/AGPL: LICENSE*):"
+        echo
+        echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
+        echo "mod-desktop           https://github.com/mod-audio/mod-desktop         $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
+        git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '{ printf "  %-40s %s\n", $2, $1 }'
+        echo "mod-host              https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
+        echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/../mod-system-control")} (branch feature/hmi-widgets)"
+        echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$EMU/../alabs-mod-custom-images/mod-dwarf-controller") ($(describe "$EMU/../alabs-mod-custom-images/mod-dwarf-controller"))"
+        echo "Duo X firmware        https://github.com/mod-audio/mod-duox-controller $(rev "$EMU/external/mod-duox-controller") ($(describe "$EMU/external/mod-duox-controller"))"
+        echo
+        echo "with patches/mod-ui and patches/mod-desktop of mod-hw-emulator applied to mod-ui and to the launcher."
+        echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."
+    } | sed 's/$/\r/' > "$PKG/SOURCES.txt"
+fi
 
 rm -f "$OUT"
 (cd "$STAGE" && zip -qr -9 "$OUT" mod-hw-emulator)
