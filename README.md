@@ -59,7 +59,8 @@ Q/A W/S turn the endless knobs, 1 2 push them, Z X C V are the buttons 1-4, F1-F
 Snapshot 2.
 
 With mod-ui as for the Dwarf (below), with the Duo X descriptor:
-`MOD_HARDWARE_DESC_FILE=../mod-hw-emulator/devices/duox/mod-hardware-descriptor.json`. It is written from
+`MOD_HARDWARE_DESC_FILE=../mod-hw-emulator/devices/duox/mod-hardware-descriptor.json`, or
+`scripts/run-mod-ui.sh --device duox ../mod-ui`. It is written from
 the firmware, not taken from the device, and has no HMI widgets: the Duo X firmware does not draw them (see
 "Device profile" in [DESIGN.md](DESIGN.md)). Not tried with mod-ui yet.
 

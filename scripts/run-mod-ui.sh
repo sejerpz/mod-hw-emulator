@@ -1,9 +1,10 @@
 #!/bin/bash
 # Runs a mod-ui checkout against the emulated controller, through its debug-server.sh.
 #
-#   scripts/run-mod-ui.sh MOD_UI_DIR [PORT]
+#   scripts/run-mod-ui.sh [--device dwarf|duox] MOD_UI_DIR [PORT]
 #
-# Start the emulator first: build/mhe-run --tcp webgui=PORT build/fw-dwarf.so (PORT 9900 by default).
+# Start the emulator first: build/mhe-run --tcp webgui=PORT build/fw-<device>.so (PORT 9900 by default).
+# The device (dwarf by default) picks the hardware descriptor mod-ui reads, devices/<device>/.
 # mod-ui needs a tcp:// HMI port: branch feature/mod-hw-emulator, or patches/mod-ui/0001-hmi-tcp-transport.patch.
 #
 # Without mod-host (default): MOD_DEV_HOST=1, no jackd, no plugin widgets.
@@ -13,8 +14,25 @@
 set -e
 
 EMU=$(cd "$(dirname "$0")/.." && pwd)
-UI=$(cd "${1:?usage: $0 MOD_UI_DIR [PORT]}" && pwd)
+DEVICE=dwarf
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --device) DEVICE=$2; shift ;;
+        --device=*) DEVICE=${1#--device=} ;;
+        -*) echo "unknown option $1" >&2; exit 1 ;;
+        *) break ;;
+    esac
+    shift
+done
+
+UI=$(cd "${1:?usage: $0 [--device dwarf|duox] MOD_UI_DIR [PORT]}" && pwd)
 PORT=${2:-9900}
+
+if [ ! -f "$EMU/devices/$DEVICE/mod-hardware-descriptor.json" ]; then
+    echo "no device '$DEVICE': dwarf or duox" >&2
+    exit 1
+fi
 
 if ! grep -q "class SocketSerial" "$UI/mod/hmi.py"; then
     echo "mod-ui has no tcp:// HMI port: use its feature/mod-hw-emulator branch or apply" >&2
@@ -28,7 +46,7 @@ export MOD_DEV_HMI=0
 export MOD_DEV_HOST=${MOD_DEV_HOST:-1}
 export MOD_DEVICE_HOST_PORT=${MOD_DEVICE_HOST_PORT:-5555}
 export MOD_HMI_SERIAL_PORT=tcp://127.0.0.1:$PORT
-export MOD_HARDWARE_DESC_FILE=$EMU/devices/dwarf/mod-hardware-descriptor.json
+export MOD_HARDWARE_DESC_FILE=$EMU/devices/$DEVICE/mod-hardware-descriptor.json
 
 cd "$UI"
 exec sh ./debug-server.sh
