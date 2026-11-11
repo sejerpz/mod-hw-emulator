@@ -144,22 +144,27 @@ jobs:
             downloads-${{ matrix.target }}-
             downloads-
 
-      # downloads.xiph.org drops the connections of GitHub's runners: the xiph archives come from the OSUOSL
-      # mirror instead, checked, where PawPaw finds them already downloaded
-      - name: Fetch the xiph archives
+      # archives PawPaw cannot get from where it looks, taken from elsewhere, checked, where it finds them
+      # already downloaded: downloads.xiph.org drops the connections of GitHub's runners (the OSUOSL mirror has
+      # them), MOD's mirror no longer has the glib of macOS (GNOME does)
+      - name: Fetch the archives PawPaw cannot
         run: |
           mkdir -p ~/PawPawBuilds/downloads
           cd ~/PawPawBuilds/downloads
-          while read -r sum path; do
-              f=$(basename "$path")
-              [ -f "$f" ] || curl -fsSL --retry 3 -o "$f" "https://ftp.osuosl.org/pub/xiph/releases/$path"
+          xiph=https://ftp.osuosl.org/pub/xiph/releases
+          {
+              echo "0eb4b4b9420a0f51db142ba3f9c64b333f826532dc0f48c6410ae51f4799b664 $xiph/ogg/libogg-1.3.5.tar.gz"
+              echo "0e982409a9c3fc82ee06e08205b1355e5c6aa4c36bca58146ef399621b0ce5ab $xiph/vorbis/libvorbis-1.3.7.tar.gz"
+              echo "f2c1c76592a82ffff8413ba3c4a1299b6c7ab06c734dee03fd88630485c2b920 $xiph/flac/flac-1.5.0.tar.xz"
+              echo "65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1 $xiph/opus/opus-1.5.2.tar.gz"
+              if [ "$RUNNER_OS" = macOS ]; then
+                  echo "d953e3112b4299e63e93cd6864019629743f8b4ab67139169ed0a577cb219cbc https://download.gnome.org/sources/glib/2.22/glib-2.22.5.tar.gz"
+              fi
+          } | while read -r sum url; do
+              f=$(basename "$url")
+              [ -f "$f" ] || curl -fsSL --retry 3 -o "$f" "$url"
               echo "$sum  $f" | shasum -a 256 -c -
-          done << 'EOF'
-          0eb4b4b9420a0f51db142ba3f9c64b333f826532dc0f48c6410ae51f4799b664 ogg/libogg-1.3.5.tar.gz
-          0e982409a9c3fc82ee06e08205b1355e5c6aa4c36bca58146ef399621b0ce5ab vorbis/libvorbis-1.3.7.tar.gz
-          f2c1c76592a82ffff8413ba3c4a1299b6c7ab06c734dee03fd88630485c2b920 flac/flac-1.5.0.tar.xz
-          65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1 opus/opus-1.5.2.tar.gz
-          EOF
+          done
       - name: Build dependencies
         working-directory: mod-desktop
         run: |
