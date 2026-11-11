@@ -22,6 +22,9 @@ env:
   PAWPAW_SKIP_LTO: 1
   # the library tests: libFLAC's fails when run as root, as in the container
   PAWPAW_SKIP_TESTS: 1
+  # configure scripts of recent autoconf pick C23 where the compiler has it (Xcode on macos-15), and older
+  # sources (glib 2.22 has a field named bool) do not build as C23
+  ac_cv_prog_cc_c23: 'no'
   # no client id for the Tone3000 integration: not an official MOD Audio build
   MOD_TONE3000_CLIENT_ID: local-dev-build
 
