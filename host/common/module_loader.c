@@ -23,6 +23,13 @@ static void *open_library(const char *path, char *error, size_t error_size)
         snprintf(error, error_size, "cannot load %s (error %lu)", path, (unsigned long)GetLastError());
     return (void *)lib;
 #else
+    /* a bare name is a file here, as LoadLibrary takes it, not one to look up in the library path */
+    char local[4096];
+    if (! strchr(path, '/') && strlen(path) + 3 <= sizeof(local))
+    {
+        snprintf(local, sizeof(local), "./%s", path);
+        path = local;
+    }
     void *lib = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (! lib)
         snprintf(error, error_size, "%s", dlerror());
