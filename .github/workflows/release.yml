@@ -46,7 +46,7 @@ jobs:
             out: mod-hw-emulator-desktop-win64.zip
           # universal (Intel and Apple Silicon), as mod-desktop's releases; not signed with a Developer ID
           - target: macos-universal-10.15
-            os: macos-14
+            os: macos-15
             container: ''
             make: PAWPAW_TARGET=macos-universal-10.15
             pack: package-macos.sh
