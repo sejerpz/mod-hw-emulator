@@ -107,6 +107,15 @@ jobs:
           path: mod-desktop
           fetch-depth: 0
           submodules: recursive
+      # MOD Desktop is built with the mod-ui of mod-hw-emulator in place of its own: HMI widgets, the HMI line
+      # over TCP, hardware addressing and the Display dialog with a controller attached
+      - name: Take mod-ui out of MOD Desktop
+        run: rm -rf mod-desktop/src/mod-ui
+      - uses: actions/checkout@v4
+        with:
+          repository: sejerpz/mod-ui
+          ref: feature/mod-hw-emulator
+          path: mod-desktop/src/mod-ui
 
       - name: Set up dependencies
         if: runner.os == 'Linux'

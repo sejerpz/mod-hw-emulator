@@ -88,9 +88,10 @@ The emulator plays the parts of the device around the controller:
 build/mhe-run --tcp webgui=9900 build/fw-dwarf.so
 ```
 
-mod-ui needs a `tcp://` HMI port: branch `feature/mod-hw-emulator` of mod-ui (`feature/hmi-widgets` plus
-[patches/mod-ui/0001-hmi-tcp-transport.patch](patches/mod-ui/0001-hmi-tcp-transport.patch); rebuild
-`utils/` after switching to it). Then, from the mod-ui folder:
+mod-ui needs a `tcp://` HMI port: branch `feature/mod-hw-emulator` of
+[sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) (`feature/hmi-widgets` with the HMI line over TCP, and
+under MOD Desktop the hardware addressing and the Display dialog when a controller is attached; kept rebased on
+`feature/hmi-widgets`, rebuild `utils/` after switching to it). Then, from the mod-ui folder:
 
 ```sh
 MOD_DEV_HOST=1 MOD_DEV_HMI=0 MOD_HMI_SERIAL_PORT=tcp://127.0.0.1:9900 \
@@ -159,8 +160,8 @@ at once (X+C, Z+X), or Ctrl+click a footswitch to arm it (dashed ring) and click
 The Windows package (`scripts/package-win64.sh`) holds the emulator and what `mhe-desktop.cmd` lays over an
 installed MOD Desktop (0.0.13, the latest Windows release): mod-host with the HMI control, mod-ui's `hmi.py` with
 the TCP line and its addressing dialog with the Device tab open
-([patches/mod-ui](patches/mod-ui)), a descriptor with the actuators of the device: the Dwarf, or the Duo X with
-`-Device duox`. MOD Desktop itself is not changed: the script keeps a copy
+([patches/mod-ui](patches/mod-ui), on the release's own mod-ui: no HMI widgets), a descriptor with the actuators
+of the device: the Dwarf, or the Duo X with `-Device duox`. MOD Desktop itself is not changed: the script keeps a copy
 of it in `%LOCALAPPDATA%\mod-hw-emulator\mod-desktop`, starts the emulator and then the copy. Pedalboards,
 plugins and settings are the usual ones; quit the installed MOD Desktop first. The copy's launcher has an
 **Open Emulator** button (and tray menu entry) to start the emulator again after closing it: a running MOD Desktop
@@ -177,16 +178,25 @@ mod-host links the same jack and lilv as the MOD Desktop it goes in; see the top
 ### Standalone zip
 
 There is no Windows release of MOD Desktop 0.14. `package-win64.sh --standalone` packs a whole MOD Desktop built
-from mod-desktop `main` with the files above already in it (`mod-desktop\`), and the launcher keeps its data
-(pedalboards, user files, its log) in `data\` next to it rather than in `Documents\MOD Desktop`
+from mod-desktop `main` (`mod-desktop\`), with mod-host and the launcher above in it, and the launcher keeps its
+data (pedalboards, user files, its log) in `data\` next to it rather than in `Documents\MOD Desktop`
 ([patches/mod-desktop](patches/mod-desktop)). Unzip it anywhere and run `mhe-desktop.cmd` (`-Device duox`,
 `-SharedData` for the data of an installed MOD Desktop). `SOURCES.txt` lists the revisions it was built from; it
 is not an official MOD Audio build (the Tone3000 integration has no client id).
 
+The standalone packages (Windows, Linux, macOS) are built with the mod-ui of mod-hw-emulator in place of
+mod-desktop's own: [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) branch `feature/mod-hw-emulator`, that
+is `feature/hmi-widgets` (the HMI widgets, on the 1.15 line of mod-ui) with the HMI line over TCP and two
+changes for MOD Desktop with a controller attached (a hardware descriptor with actuators): the Device addressing
+tab and the snapshots' "assign all" stay, and so does the **Display** dialog of the HMI widgets, which MOD
+Desktop otherwise hides for having no display. The device settings and Control Chain stay hidden: MOD Desktop
+has nothing behind them. mod-ui is put in `src/mod-ui` before MOD Desktop is built, so its `utils/` library is
+built from the same sources; `patches/mod-ui` is only for the package laid over an installed MOD Desktop.
+
 ## On Linux, with MOD Desktop
 
 `scripts/package-linux.sh` builds the same standalone package for Linux (x86_64): MOD Desktop built from
-mod-desktop `main` as its CI builds it (ubuntu:22.04), with mod-host, mod-ui's files and the launcher of the
+mod-desktop `main` as its CI builds it (ubuntu:22.04), with mod-host, mod-ui and the launcher of the
 emulator in it, the emulator and the Dwarf and Duo X firmwares next to it. Unpack it anywhere and run
 `mhe-desktop.sh`:
 
@@ -198,10 +208,23 @@ mod-hw-emulator/mhe-desktop.sh                    # --device duox, --shared-data
 As MOD Desktop's own Linux build, the launcher and the emulator use the Qt 5 of the system (Debian/Ubuntu:
 `libqt5widgets5`); it runs on glibc 2.35 (Ubuntu 22.04) or later, WSL with WSLg included.
 
+## On macOS, with MOD Desktop
+
+`scripts/package-macos.sh` builds it for macOS, universal (Intel and Apple Silicon, macOS 10.15 or later):
+`MOD Desktop.app` with mod-host, mod-ui, the launcher and the emulator in it (the emulator uses the app's Qt),
+the Dwarf and Duo X firmwares and their skins next to it. It is not signed with an Apple Developer ID, only
+ad-hoc: after unpacking, clear the mark macOS puts on downloads, then start it from a terminal:
+
+```sh
+xattr -dr com.apple.quarantine mod-hw-emulator
+mod-hw-emulator/mhe-desktop.sh                    # --device duox, --shared-data for ~/Documents/MOD Desktop
+```
+
 ## Release builds
 
-[.github/workflows/release.yml](.github/workflows/release.yml) builds both standalone packages on GitHub
-Actions, from the forks of the firmwares, mod-host and mod-system-control and the mod-desktop commit it names:
+[.github/workflows/release.yml](.github/workflows/release.yml) builds the three standalone packages on GitHub
+Actions (Linux and Windows in mod-desktop's ubuntu:22.04 container, macOS on macos-15), from the forks of mod-ui,
+the firmwares, mod-host and mod-system-control and the mod-desktop commit it names:
 run it by hand (Actions, release, Run workflow) for the packages as artifacts of the run, or push a tag `v*`
 to also attach them to a draft release of that tag. A run whose PawPaw dependencies are not in the cache yet
 (a new mod-desktop commit) only builds and caches them: run it again for the packages.
@@ -216,7 +239,7 @@ to also attach them to a draft release of that tag. A run whose PawPaw dependenc
 | `devices/dwarf/` | Dwarf board: pins, panel, module entry; `skin/` the panel picture of the user interface (CC BY 4.0) |
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `scripts/` | launchers for mod-host and mod-ui, firmware fetch, build adaptations of the firmware sources |
-| `patches/` | the mod-ui changes the emulator needs: the TCP HMI line (also on mod-ui branch `feature/mod-hw-emulator`), hardware addressing on MOD Desktop when the descriptor has actuators; mod-desktop's launcher with the Open Emulator button |
+| `patches/` | mod-desktop's launcher with the Open Emulator button and the data folder of the package; the mod-ui changes laid over an installed MOD Desktop (the standalone packages take them from mod-ui branch `feature/mod-hw-emulator` instead): the TCP HMI line, hardware addressing when the descriptor has actuators |
 
 ## License
 

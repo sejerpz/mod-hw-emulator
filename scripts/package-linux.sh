@@ -1,11 +1,14 @@
 #!/bin/bash
-# Builds the standalone Linux package of mod-hw-emulator: a whole MOD Desktop with mod-host, mod-ui's files and the
+# Builds the standalone Linux package of mod-hw-emulator: a whole MOD Desktop with mod-host, mod-ui and the
 # launcher of mod-hw-emulator in it, and the emulator with the Dwarf and the Duo X next to it.
 #
 #   scripts/package-linux.sh MOD_DESKTOP MOD_HOST [OUT]
 #
-# MOD_DESKTOP is a mod-desktop checkout built for linux-x86_64 as mod-desktop's CI does it (ubuntu:22.04):
+# MOD_DESKTOP is a mod-desktop checkout built for linux-x86_64 as mod-desktop's CI does it (ubuntu:22.04), with
+# the mod-ui of mod-hw-emulator in place of its own: sejerpz/mod-ui, branch feature/mod-hw-emulator (HMI widgets,
+# the HMI line over TCP, hardware addressing and the Display dialog with a controller attached):
 #
+#   rm -rf src/mod-ui && git clone -b feature/mod-hw-emulator https://github.com/sejerpz/mod-ui.git src/mod-ui
 #   src/PawPaw/.github/workflows/bootstrap-deps.sh linux-x86_64
 #   utils/apply-patches.sh
 #   src/PawPaw/bootstrap-mod.sh linux-x86_64
@@ -26,6 +29,12 @@ TARGET=linux-$ARCH
 RUN="$MOD_DESKTOP/utils/run.sh $TARGET"
 DEVICES="dwarf duox"
 
+# the mod-ui MOD Desktop was built with: the one of mod-hw-emulator has the HMI line over TCP
+if ! grep -q "tcp://" "$MOD_DESKTOP/src/mod-ui/mod/hmi.py"; then
+    echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui feature/mod-hw-emulator in src/mod-ui" >&2
+    exit 1
+fi
+
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 PKG=$STAGE/mod-hw-emulator
@@ -43,19 +52,6 @@ fi
 $RUN make -C "$STAGE/mod-host" clean > /dev/null
 $RUN make -C "$STAGE/mod-host" MOD_DESKTOP=1 MOD_HMI_EMULATOR=1 SKIP_READLINE=1 SKIP_FFTW335=1 mod-host.so
 cp "$STAGE/mod-host/mod-host.so" "$MD/jack/mod-host.so"
-
-# mod-ui of this MOD Desktop with the patches: the HMI line over TCP, hardware addressing with actuators
-cp -a "$MOD_DESKTOP/src/mod-ui" "$STAGE/mod-ui"
-for p in "$EMU"/patches/mod-ui/*.patch; do
-    patch -s -p1 -d "$STAGE/mod-ui" < "$p"
-done
-for f in $(cat "$EMU"/patches/mod-ui/*.patch | awk '/^\+\+\+ b\// { print substr($2, 3) }' | sort -u); do
-    if [ ! -e "$MD/$f" ]; then
-        echo "MOD Desktop has no $f: where does its mod-ui keep it?" >&2
-        exit 1
-    fi
-    cp "$STAGE/mod-ui/$f" "$MD/$f"
-done
 
 # MOD Desktop's launcher with the button that starts the emulator and the data folder of the package
 # (patches/mod-desktop); its sources expect the checkout around them (VERSION, res/)
@@ -111,13 +107,14 @@ describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo u
     echo
     echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
     echo "mod-desktop           https://github.com/mod-audio/mod-desktop         $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
-    git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '{ printf "  %-40s %s\n", $2, $1 }'
+    git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '$2 != "src/mod-ui" { printf "  %-40s %s\n", $2, $1 }'
+    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
     echo "mod-host              https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
     echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/../mod-system-control")} (branch feature/hmi-widgets)"
     echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
     echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
     echo
-    echo "with patches/mod-ui and patches/mod-desktop of mod-hw-emulator applied to mod-ui and to the launcher."
+    echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
     echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."
 } > "$PKG/SOURCES.txt"
 
