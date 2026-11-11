@@ -112,6 +112,8 @@ bool findSkin(const QString &modulePath, const QString &device, Skin &skin)
     const QString module = QFileInfo(modulePath).absolutePath();
     const QStringList dirs = {
         app + QStringLiteral("/skins/") + device,
+        /* the macOS package: the program in the app bundle, the firmwares and skins next to it */
+        module + QStringLiteral("/skins/") + device,
         app + QStringLiteral("/../devices/") + device + QStringLiteral("/skin"),
         module + QStringLiteral("/../devices/") + device + QStringLiteral("/skin"),
     };

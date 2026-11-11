@@ -37,8 +37,10 @@ SO_EXT   = .so
 HOST_LIBS = -ldl
 endif
 
-COMMON_CFLAGS = -D_GNU_SOURCE -std=gnu11 -O2 -g -pthread -fPIC -Wall -MMD -MP
-MODULE_LDFLAGS = -shared -pthread
+# ARCH_FLAGS: for every compile and link, such as -arch arm64 -mmacosx-version-min=10.15 (scripts/package-macos.sh)
+ARCH_FLAGS ?=
+COMMON_CFLAGS = -D_GNU_SOURCE -std=gnu11 -O2 -g -pthread -fPIC -Wall -MMD -MP $(ARCH_FLAGS)
+MODULE_LDFLAGS = -shared -pthread $(ARCH_FLAGS)
 ifeq ($(WINDOWS),true)
 # the GCC runtimes go in each file; libwinpthread-1.dll stays one, shared by the host and the modules
 MODULE_LDFLAGS += -static-libgcc
@@ -198,13 +200,13 @@ RUN_SRC = host/run/mhe-run.c host/common/module_loader.c host/common/png.c host/
 
 $(BUILD)/mhe-run$(EXE_EXT): $(RUN_SRC) $(SYS_HOST_OBJ) include/mhe/emu_module.h $(wildcard host/common/*.h)
 	@mkdir -p $(dir $@)
-	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -Iinclude $(SYS_HOST_CFLAGS) -o $@ $(RUN_SRC) $(SYS_HOST_OBJ) \
+	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall $(ARCH_FLAGS) -Iinclude $(SYS_HOST_CFLAGS) -o $@ $(RUN_SRC) $(SYS_HOST_OBJ) \
 	    -pthread $(HOST_LIBS)
 
 # sys_host.c for one device: sys_host-dwarf.o is built with _MOD_DEVICE_DWARF, its functions mhe_sys_host_dwarf_*
 $(BUILD)/msc/sys_host-%.o: $(SYS_HOST_SRC) host/common/msc-shim/sys_host_device.h
 	@mkdir -p $(dir $@)
-	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -fPIC -MMD -MP $(SYS_HOST_CFLAGS) \
+	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -fPIC -MMD -MP $(ARCH_FLAGS) $(SYS_HOST_CFLAGS) \
 	    -D_MOD_DEVICE_$(shell echo $* | tr a-z A-Z) -DMHE_SYS_HOST_DEVICE=$* \
 	    -include host/common/msc-shim/sys_host_device.h -c $< -o $@
 
@@ -212,8 +214,20 @@ $(BUILD)/msc/sys_host-%.o: $(SYS_HOST_SRC) host/common/msc-shim/sys_host_device.
 # user interface (Qt5 Widgets, as shipped by mod-desktop)
 
 PKG_CONFIG ?= pkg-config
+ifeq ($(shell $(PKG_CONFIG) --exists Qt5Widgets && echo yes),yes)
 QT_CFLAGS = $(shell $(PKG_CONFIG) --cflags Qt5Widgets)
 QT_LIBS   = $(shell $(PKG_CONFIG) --libs Qt5Widgets)
+else
+# PawPaw's Qt for macOS has frameworks and no Qt5Widgets.pc: found as mod-desktop's launcher finds it
+QT5_PREFIX = $(shell $(PKG_CONFIG) --variable=prefix Qt5OpenGLExtensions)
+QT_CFLAGS  = -DQT_CORE_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB -I$(QT5_PREFIX)/include/qt5 -F$(QT5_PREFIX)/lib \
+             $(foreach q,Core Gui Widgets,-I$(QT5_PREFIX)/include/qt5/Qt$(q) -I$(QT5_PREFIX)/lib/Qt$(q).framework/Headers)
+ifeq ($(UNAME),Darwin)
+QT_LIBS    = -F$(QT5_PREFIX)/lib -framework QtCore -framework QtGui -framework QtWidgets
+else
+QT_LIBS    = -L$(QT5_PREFIX)/lib -lQt5Core -lQt5Gui -lQt5Widgets
+endif
+endif
 
 GUI_CXX_SRC = host/gui/main.cpp host/gui/emulator.cpp host/gui/controls.cpp
 GUI_C_SRC   = host/common/module_loader.c host/common/syscontrol.c host/common/console.c host/common/tcp_serial.c
@@ -224,14 +238,14 @@ gui: $(BUILD)/mod-hw-emulator$(EXE_EXT)
 
 $(BUILD)/gui/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) -std=c++17 -O2 -g -Wall -fPIC -MMD -MP -Iinclude $(QT_CFLAGS) -c $< -o $@
+	$(CXX) -std=c++17 -O2 -g -Wall -fPIC -MMD -MP $(ARCH_FLAGS) -Iinclude $(QT_CFLAGS) -c $< -o $@
 
 $(BUILD)/gui/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -fPIC -MMD -MP -Iinclude $(SYS_HOST_CFLAGS) -c $< -o $@
+	$(CC) -D_GNU_SOURCE -std=gnu11 -O2 -g -Wall -fPIC -MMD -MP $(ARCH_FLAGS) -Iinclude $(SYS_HOST_CFLAGS) -c $< -o $@
 
 $(BUILD)/mod-hw-emulator$(EXE_EXT): $(GUI_OBJ)
-	$(CXX) -o $@ $^ $(QT_LIBS) -pthread $(HOST_LIBS)
+	$(CXX) $(ARCH_FLAGS) -o $@ $^ $(QT_LIBS) -pthread $(HOST_LIBS)
 
 # ---------------------------------------------------------------------------------------------------------------
 
