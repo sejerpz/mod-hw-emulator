@@ -123,7 +123,12 @@ static void report(uintptr_t ip, uintptr_t offset)
 #include <dlfcn.h>
 #include <signal.h>
 #include <stdio.h>
+#if defined(__APPLE__)
+/* <ucontext.h> wants _XOPEN_SOURCE there; the type and its machine context are in <sys/ucontext.h> */
+#include <sys/ucontext.h>
+#else
 #include <ucontext.h>
+#endif
 #include <unistd.h>
 
 static struct sigaction g_previous;

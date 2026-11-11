@@ -237,6 +237,8 @@ jobs:
       - name: Pack
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
+          # on macOS, where the emulator is the newest, a failed build shows all its errors at once
+          [ "$RUNNER_OS" != macOS ] || export MAKEFLAGS=-k
           bash mod-hw-emulator/scripts/${{ matrix.pack }} mod-desktop mod-host ${{ matrix.out }}
           ls -la ${{ matrix.out }}
       # the emulator of the macOS package starts, with each firmware: a picture of each, kept with the run
