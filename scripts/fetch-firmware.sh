@@ -1,55 +1,32 @@
 #!/bin/sh
-# Fetches the firmware sources the emulator builds, into external/ (not tracked).
+# Clones the firmware sources the emulator builds next to it, where the Makefile looks for them
+# (../mod-dwarf-controller, ../mod-duox-controller), with their protocol submodule at the commit they pin.
 #
-#   scripts/fetch-firmware.sh [DWARF_REPO [BRANCH [PROTO_BRANCH]]]
-#   scripts/fetch-firmware.sh duox [BRANCH]
+#   scripts/fetch-firmware.sh [dwarf|duox [BRANCH]]
 #
-# Defaults: the aLabs Dwarf controller with HMI widgets, and the protocol branch that matches it; the
-# mod-audio Duo X controller (make DEVICE=duox), whose protocol submodule is published as pinned.
+# Defaults: the Dwarf controller of sejerpz on feature/mod-hw-emulator (the aLabs HMI widgets plus the fixes
+# found with the emulator), the Duo X controller on master of the sejerpz fork of mod-audio's. Both are
+# published with their submodules, so a plain clone builds.
 
 set -e
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
-if [ "$1" = duox ]; then
-    DUOX=external/mod-duox-controller
-    mkdir -p external
-    if [ ! -d "$DUOX/.git" ]; then
-        git clone --branch "${2:-master}" https://github.com/mod-audio/mod-duox-controller.git "$DUOX"
-    else
-        git -C "$DUOX" fetch origin
-        git -C "$DUOX" checkout "${2:-master}"
-    fi
-    git -C "$DUOX" submodule update --init
-    echo "firmware: $(git -C "$DUOX" log --oneline -1)"
-    exit 0
-fi
+DEVICE=${1:-dwarf}
+case "$DEVICE" in
+    dwarf) BRANCH=${2:-feature/mod-hw-emulator} ;;
+    duox) BRANCH=${2:-master} ;;
+    *) echo "usage: $0 [dwarf|duox [BRANCH]]" >&2; exit 2 ;;
+esac
+DIR=mod-$DEVICE-controller
 
-DWARF_REPO=${1:-https://github.com/sejerpz/mod-dwarf-controller.git}
-DWARF_BRANCH=${2:-feature/hmi-widgets}
-PROTO_REPO=https://github.com/sejerpz/mod-controller-proto.git
-PROTO_BRANCH=${3:-feature/hmi-widgets}
-
-mkdir -p external
-
-if [ ! -d external/mod-dwarf-controller/.git ]; then
-    git clone --branch "$DWARF_BRANCH" "$DWARF_REPO" external/mod-dwarf-controller
+if [ ! -e "$DIR/.git" ]; then
+    git clone --branch "$BRANCH" "https://github.com/sejerpz/$DIR.git" "$DIR"
 else
-    git -C external/mod-dwarf-controller fetch origin
-    git -C external/mod-dwarf-controller checkout "$DWARF_BRANCH"
+    git -C "$DIR" fetch origin
+    git -C "$DIR" checkout "$BRANCH"
 fi
+git -C "$DIR" submodule update --init
 
-# the protocol submodule: the commit pinned by the firmware is not published; it is the widgets branch
-# merged with the ui-config one, rebuilt here
-PROTO=external/mod-dwarf-controller/mod-controller-proto
-if [ ! -d "$PROTO/.git" ] && [ ! -f "$PROTO/.git" ]; then
-    rm -rf "$PROTO"
-    git clone "$PROTO_REPO" "$PROTO"
-else
-    git -C "$PROTO" fetch origin
-fi
-git -C "$PROTO" checkout --detach "origin/$PROTO_BRANCH"
-git -C "$PROTO" -c user.name=mhe -c user.email=mhe@localhost merge --no-edit origin/feature/ui-config
-
-echo "firmware: $(git -C external/mod-dwarf-controller log --oneline -1)"
-echo "protocol: $(git -C "$PROTO" log --oneline -1)"
+echo "firmware: $(git -C "$DIR" log --oneline -1)"
+echo "protocol: $(git -C "$DIR/mod-controller-proto" log --oneline -1)"

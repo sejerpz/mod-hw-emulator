@@ -13,10 +13,11 @@ Needs GCC or Clang (MinGW on Windows), GNU make and git.
 make                           # build/fw-dwarf.so (.dll/.dylib) and build/mhe-run
 ```
 
-The firmware is built from `../alabs-mod-custom-images/mod-dwarf-controller` (branch
-`feature/mod-hw-emulator`: `feature/hmi-widgets` plus fixes found with the emulator, and its protocol
+The firmware is built from `../mod-dwarf-controller`, a checkout of
+[sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) on branch
+`feature/mod-hw-emulator` (`feature/hmi-widgets` plus fixes found with the emulator, and its protocol
 submodule on the widgets and ui-config branches merged); `make FW_DWARF=path` for another checkout.
-`scripts/fetch-firmware.sh` clones the sources into `external/` where there is no checkout.
+`scripts/fetch-firmware.sh` clones it there with its submodule.
 
 ### Several firmware versions
 
@@ -44,7 +45,7 @@ module, choosing one restarts the emulator on it.
 ### MOD Duo X
 
 ```sh
-scripts/fetch-firmware.sh duox     # mod-audio/mod-duox-controller into external/
+scripts/fetch-firmware.sh duox     # sejerpz/mod-duox-controller (fork of mod-audio's) into ../mod-duox-controller
 make DEVICE=duox                   # build/fw-duox-<describe>.so, build/fw-duox.so
 build/mhe-run build/fw-duox.so "wait 6000" "send webgui boot 4 0 0 0 0 0" "wait 3000" "pot knob1 30000" "snap duox.png"
 build/mod-hw-emulator build/fw-duox.so

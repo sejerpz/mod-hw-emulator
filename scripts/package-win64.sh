@@ -126,6 +126,8 @@ if $STANDALONE; then
     rm -rf "$OVL"
     cp "$MOD_DESKTOP/LICENSE" "$PKG/LICENSE-mod-desktop.txt"
 
+    DWARF=$(cd "$EMU" && realpath -m "${FW_DWARF:-../mod-dwarf-controller}")
+    DUOX=$(cd "$EMU" && realpath -m "${FW_DUOX:-../mod-duox-controller}")
     rev() { git -C "$1" rev-parse HEAD 2> /dev/null || echo "${2:-unknown}"; }
     describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo unknown; }
     {
@@ -138,8 +140,8 @@ if $STANDALONE; then
         git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '{ printf "  %-40s %s\n", $2, $1 }'
         echo "mod-host              https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
         echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/../mod-system-control")} (branch feature/hmi-widgets)"
-        echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$EMU/../alabs-mod-custom-images/mod-dwarf-controller") ($(describe "$EMU/../alabs-mod-custom-images/mod-dwarf-controller"))"
-        echo "Duo X firmware        https://github.com/mod-audio/mod-duox-controller $(rev "$EMU/external/mod-duox-controller") ($(describe "$EMU/external/mod-duox-controller"))"
+        echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
+        echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
         echo
         echo "with patches/mod-ui and patches/mod-desktop of mod-hw-emulator applied to mod-ui and to the launcher."
         echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

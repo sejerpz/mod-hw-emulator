@@ -3,8 +3,8 @@
 #   make                 firmware module of DEVICE (dwarf by default) and the headless runner
 #   make DEVICE=duox     the MOD Duo X instead (one devices/<device>/device.mk per device)
 #   make gui             Qt5 user interface (pkg-config Qt5Widgets)
-#   make FW_DWARF=path   another checkout of mod-dwarf-controller (default: the aLabs custom images one);
-#                        FW_DUOX for the Duo X (default: external/mod-duox-controller)
+#   make FW_DWARF=path   another checkout of mod-dwarf-controller (default: ../mod-dwarf-controller);
+#                        FW_DUOX for the Duo X (default: ../mod-duox-controller)
 #   make FW_REF=stls18   a tag, branch or commit of that checkout, without touching it
 #   make firmware        only the firmware module
 #
