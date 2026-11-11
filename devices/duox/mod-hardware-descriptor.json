@@ -5,7 +5,7 @@
   "bin-compat": "aarch64-a53",
   "gpio_platform": "",
   "codec_truebypass": false,
-  "factory_pedalboards": true,
+  "factory_pedalboards": false,
   "has_noisegate": true,
   "hmi_actuator_group_prefix": true,
   "hmi_bank_navigation": false,
