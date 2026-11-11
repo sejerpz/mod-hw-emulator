@@ -141,11 +141,15 @@ cp "$EMU/LICENSE" "$PKG/"
 cp "$MOD_DESKTOP/LICENSE" "$PKG/LICENSE-mod-desktop.txt"
 
 # ad-hoc signatures: install_name_tool breaks the ones the linker made, and Apple Silicon runs no unsigned code
-find "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$PKG"/fw-*.dylib -type f | while read -r f; do
+# (the bundle's main program last: signing it checks the other code in the bundle)
+find "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/PlugIns" "$PKG"/fw-*.dylib -type f \
+     ! -path "$MACOS/mod-desktop" > "$STAGE/code.txt"
+while read -r f; do
     if file -b "$f" | grep -q Mach-O; then
         codesign --force -s - "$f"
     fi
-done
+done < "$STAGE/code.txt"
+codesign --force -s - "$MACOS/mod-desktop"
 codesign --force --deep -s - "$APP" || echo "the bundle as a whole is not signed: its programs are" >&2
 
 DWARF=$(cd "$EMU" && cd "${FW_DWARF:-../mod-dwarf-controller}" && pwd)
