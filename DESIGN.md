@@ -215,6 +215,9 @@ with mod-ui and a pedalboard, sys_host.c for the Duo X with mod-host. The jack l
   The launcher keeps a `MOD_DATA_DIR` given to it (`patches/mod-desktop/0002`), so the zip keeps its data next
   to it and never mixes with an installed MOD Desktop; the descriptor is still written at each start, from
   MOD Desktop's own one kept in `devices\mod-desktop.json`, for the device chosen.
+- **Standalone on Linux**: the same package for Linux (`package-linux.sh`, `mhe-desktop.sh`), MOD Desktop
+  built for linux-x86_64 in its CI container. There too both sides of `/sys_msgs` use TCP
+  (`MOD_SYS_SERIAL_PORT`), so it needs no shared memory between the emulator and jackd.
 
 ## Milestones
 

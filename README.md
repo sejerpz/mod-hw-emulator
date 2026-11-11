@@ -182,6 +182,21 @@ from mod-desktop `main` with the files above already in it (`mod-desktop\`), and
 `-SharedData` for the data of an installed MOD Desktop). `SOURCES.txt` lists the revisions it was built from; it
 is not an official MOD Audio build (the Tone3000 integration has no client id).
 
+## On Linux, with MOD Desktop
+
+`scripts/package-linux.sh` builds the same standalone package for Linux (x86_64): MOD Desktop built from
+mod-desktop `main` as its CI builds it (ubuntu:22.04), with mod-host, mod-ui's files and the launcher of the
+emulator in it, the emulator and the Dwarf and Duo X firmwares next to it. Unpack it anywhere and run
+`mhe-desktop.sh`:
+
+```sh
+tar xJf mod-hw-emulator-desktop-linux-x86_64.tar.xz
+mod-hw-emulator/mhe-desktop.sh                    # --device duox, --shared-data for ~/Documents/MOD Desktop
+```
+
+As MOD Desktop's own Linux build, the launcher and the emulator use the Qt 5 of the system (Debian/Ubuntu:
+`libqt5widgets5`); it runs on glibc 2.35 (Ubuntu 22.04) or later, WSL with WSLg included.
+
 ## Layout
 
 | Path | What |
