@@ -93,6 +93,22 @@ jobs:
           path: |
             ~/PawPawBuilds
           key: linux-x86_64-${{ env.MOD_DESKTOP_REF }}-v${{ env.CACHE_VERSION_LINUX }}
+      # downloads.xiph.org drops the connections of GitHub's runners: the xiph archives come from the OSUOSL
+      # mirror instead, checked, where PawPaw finds them already downloaded
+      - name: Fetch the xiph archives
+        run: |
+          mkdir -p ~/PawPawBuilds/downloads
+          cd ~/PawPawBuilds/downloads
+          while read -r sum path; do
+              f=$(basename "$path")
+              [ -f "$f" ] || curl -fsSL --retry 3 -o "$f" "https://ftp.osuosl.org/pub/xiph/releases/$path"
+              echo "$sum  $f" | sha256sum -c -
+          done << 'EOF'
+          0eb4b4b9420a0f51db142ba3f9c64b333f826532dc0f48c6410ae51f4799b664 ogg/libogg-1.3.5.tar.gz
+          0e982409a9c3fc82ee06e08205b1355e5c6aa4c36bca58146ef399621b0ce5ab vorbis/libvorbis-1.3.7.tar.gz
+          f2c1c76592a82ffff8413ba3c4a1299b6c7ab06c734dee03fd88630485c2b920 flac/flac-1.5.0.tar.xz
+          65c1d2f78b9f2fb20082c38cbe47c951ad5839345876e46941612ee87f9a7ce1 opus/opus-1.5.2.tar.gz
+          EOF
       - name: Build dependencies
         working-directory: mod-desktop
         run: |
