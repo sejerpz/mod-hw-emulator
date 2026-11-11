@@ -128,6 +128,11 @@ jobs:
           ./utils/apply-patches.sh
           # FluidPlug's archive at the commit mod-plugin-builder pins is no longer on GitHub
           sed -i.orig '/^PLUGINS += fluidplug$/d' Makefile && rm Makefile.orig
+          # zix's C++ tests do not build with the SDK of macos-15 (its Path); PawPaw disables them only before
+          # macOS 10.15, and the tests are not run here anyway
+          sed -i.orig 's/if \[ "${MACOS}" -eq 1 \] && \[ "${MACOS_10_15}" -eq 0 \]; then/if [ "${MACOS}" -eq 1 ]; then/' \
+              src/PawPaw/bootstrap-plugins.sh && rm src/PawPaw/bootstrap-plugins.sh.orig
+          grep -n 'if \[ "${MACOS}" -eq 1 \]; then' src/PawPaw/bootstrap-plugins.sh
       - name: Set up cache
         id: cache
         uses: actions/cache@v4
