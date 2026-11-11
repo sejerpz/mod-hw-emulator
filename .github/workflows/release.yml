@@ -2,7 +2,7 @@
 # CI builds MOD Desktop. Run by hand (Actions > release > Run workflow) or by pushing a tag v*, which also
 # attaches the packages to a draft release of that tag.
 #
-# The PawPaw dependencies of MOD Desktop take hours: like mod-desktop's CI, a run without them in the cache
+# The PawPaw dependencies of MOD Desktop take a while: like mod-desktop's CI, a run without them in the cache
 # only builds and caches them, and MOD Desktop and the package are built by the next run.
 
 name: release
@@ -16,7 +16,7 @@ on:
 env:
   # mod-desktop main the packages are built from (0.14-2)
   MOD_DESKTOP_REF: 9367cbcf803376aa4c72a97ad6f65f4c8126336b
-  CACHE_VERSION_LINUX: 1
+  CACHE_VERSION: 1
   DEBIAN_FRONTEND: noninteractive
   PAWPAW_FAST_MATH: 1
   PAWPAW_SKIP_LTO: 1
@@ -26,7 +26,20 @@ env:
   MOD_TONE3000_CLIENT_ID: local-dev-build
 
 jobs:
-  linux-x86_64:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x86_64
+            make: ''
+            pack: package-linux.sh
+            out: mod-hw-emulator-desktop-linux-x86_64.tar.xz
+          - target: win64
+            make: win64
+            pack: package-win64.sh --standalone
+            out: mod-hw-emulator-desktop-win64.zip
+    name: ${{ matrix.target }}
     runs-on: ubuntu-latest
     container:
       image: ubuntu:22.04
@@ -81,8 +94,9 @@ jobs:
       - name: Set up dependencies
         working-directory: mod-desktop
         run: |
-          ./src/PawPaw/.github/workflows/bootstrap-deps.sh linux-x86_64
-          apt-get install -yqq libfreetype-dev p7zip-full python3 unzip wget xdg-user-dirs xz-utils zip
+          ./src/PawPaw/.github/workflows/bootstrap-deps.sh ${{ matrix.target }}
+          apt-get install -yqq libfreetype-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev libxrender-dev \
+              p7zip-full python3 unzip wget xdg-user-dirs xvfb xz-utils zip
           ./utils/apply-patches.sh
           # FluidPlug's archive at the commit mod-plugin-builder pins is no longer on GitHub
           sed -i '/^PLUGINS += fluidplug$/d' Makefile
@@ -92,7 +106,8 @@ jobs:
         with:
           path: |
             ~/PawPawBuilds
-          key: linux-x86_64-${{ env.MOD_DESKTOP_REF }}-v${{ env.CACHE_VERSION_LINUX }}
+          key: ${{ matrix.target }}-${{ env.MOD_DESKTOP_REF }}-v${{ env.CACHE_VERSION }}
+
       # downloads.xiph.org drops the connections of GitHub's runners: the xiph archives come from the OSUOSL
       # mirror instead, checked, where PawPaw finds them already downloaded
       - name: Fetch the xiph archives
@@ -112,31 +127,31 @@ jobs:
       - name: Build dependencies
         working-directory: mod-desktop
         run: |
-          ./src/PawPaw/bootstrap-mod.sh linux-x86_64 && ./src/PawPaw/.cleanup.sh linux-x86_64
+          ./src/PawPaw/bootstrap-mod.sh ${{ matrix.target }} && ./src/PawPaw/.cleanup.sh ${{ matrix.target }}
       - name: Dependencies cached, run the workflow again
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          echo "::notice::PawPaw's dependencies are built and will be cached at the end of this job: run the workflow again to build the package"
+          echo "::notice::PawPaw's dependencies for ${{ matrix.target }} are built and will be cached at the end of this job: run the workflow again to build the package"
 
       - name: Build MOD Desktop
         if: steps.cache.outputs.cache-hit == 'true'
         working-directory: mod-desktop
         run: |
-          make -j$(nproc)
+          make ${{ matrix.make }} -j$(nproc)
       - name: Pack
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          bash mod-hw-emulator/scripts/package-linux.sh mod-desktop mod-host mod-hw-emulator-desktop-linux-x86_64.tar.xz
-          tar xJOf mod-hw-emulator-desktop-linux-x86_64.tar.xz mod-hw-emulator/SOURCES.txt
+          bash mod-hw-emulator/scripts/${{ matrix.pack }} mod-desktop mod-host ${{ matrix.out }}
+          ls -la ${{ matrix.out }}
       - uses: actions/upload-artifact@v4
         if: steps.cache.outputs.cache-hit == 'true'
         with:
-          name: mod-hw-emulator-desktop-linux-x86_64
-          path: mod-hw-emulator-desktop-linux-x86_64.tar.xz
+          name: ${{ matrix.out }}
+          path: ${{ matrix.out }}
           compression-level: 0
       - uses: softprops/action-gh-release@v2
         if: steps.cache.outputs.cache-hit == 'true' && startsWith(github.ref, 'refs/tags/')
         with:
           tag_name: ${{ github.ref_name }}
           draft: true
-          files: mod-hw-emulator-desktop-linux-x86_64.tar.xz
+          files: ${{ matrix.out }}
