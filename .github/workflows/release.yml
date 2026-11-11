@@ -60,10 +60,15 @@ jobs:
     permissions:
       contents: write
     steps:
+      # the runners' DNS fails at times: apt finds no packages then, so it is tried again a little later
       - name: Install git
         if: runner.os == 'Linux'
         run: |
-          apt-get update -qq && apt-get install -yqq --no-install-recommends ca-certificates git openssl
+          for attempt in 1 2 3 4 5; do
+              apt-get update -qq && apt-get install -yqq --no-install-recommends ca-certificates git openssl && exit 0
+              sleep 30
+          done
+          exit 1
       - name: Set up git
         run: |
           git config --global --add safe.directory '*'
@@ -142,6 +147,13 @@ jobs:
           sed -i.orig 's/if \[ "${MACOS}" -eq 1 \] && \[ "${MACOS_10_15}" -eq 0 \]; then/if [ "${MACOS}" -eq 1 ]; then/' \
               src/PawPaw/bootstrap-plugins.sh && rm src/PawPaw/bootstrap-plugins.sh.orig
           grep -n 'if \[ "${MACOS}" -eq 1 \]; then' src/PawPaw/bootstrap-plugins.sh
+          # mod-utilities' HardwareBypass (mod-bypass, the true bypass of MOD devices) needs ALSA: not on macOS,
+          # where it is built only with MOD=1, which the plugin builder passes
+          if [ "$RUNNER_OS" = macOS ]; then
+              mk=src/mod-plugin-builder/plugins/package/mod-utilities/mod-utilities.mk
+              sed -i.orig -e 's/ MOD=1 / /' -e 's/ mod-bypass\.lv2 / /' -e '/mod-bypass\.lv2\/\*/d' $mk && rm $mk.orig
+              ! grep -n 'MOD=1\|mod-bypass' $mk
+          fi
       - name: Set up cache
         id: cache
         uses: actions/cache@v4
@@ -191,7 +203,7 @@ jobs:
         run: |
           echo "::notice::PawPaw's dependencies for ${{ matrix.target }} are built and will be cached at the end of this job: run the workflow again to build the package"
 
-      # a download answered with a page is removed and tried again a little later, a few times
+      # a download that failed, or was answered with a page (removed), is tried again a little later, a few times
       - name: Build MOD Desktop
         if: steps.cache.outputs.cache-hit == 'true'
         working-directory: mod-desktop
@@ -199,9 +211,11 @@ jobs:
           for attempt in 1 2 3 4; do
               make -k ${{ matrix.make }} -j$(getconf _NPROCESSORS_ONLN) && exit 0
               bad=$(../mod-hw-emulator/scripts/ci-bad-downloads.sh ~/PawPawBuilds/downloads)
-              [ -n "$bad" ] || exit 1
-              echo "::warning::not archives, downloaded again: $bad"
-              (cd ~/PawPawBuilds/downloads && rm -f $bad)
+              if [ -n "$bad" ]; then
+                  echo "::warning::not archives, downloaded again: $bad"
+                  (cd ~/PawPawBuilds/downloads && rm -f $bad)
+              fi
+              echo "::warning::attempt $attempt failed, trying again"
               sleep 60
           done
           exit 1
