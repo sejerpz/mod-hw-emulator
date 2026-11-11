@@ -213,6 +213,7 @@ jobs:
       - name: Build MOD Desktop
         if: steps.cache.outputs.cache-hit == 'true'
         working-directory: mod-desktop
+        shell: bash
         run: |
           set -o pipefail
           for attempt in 1 2 3 4; do
