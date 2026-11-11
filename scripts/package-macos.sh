@@ -92,13 +92,15 @@ cp "$STAGE/launcher/src/systray/mod-desktop" "$MACOS/mod-desktop"
 
 # the emulator and the firmwares, once per architecture (the Makefile builds one at a time) and joined: the
 # programs in the bundle, with its Qt, the firmwares next to it
+# (ARCH_FLAGS through the environment: run.sh splits its arguments on spaces)
 for a in $ARCHS; do
-    flags="-arch $a -mmacosx-version-min=$MIN_MACOS"
-    $RUN make -C "$EMU" BUILD=build-macos-$a ARCH_FLAGS="$flags" all gui
+    export ARCH_FLAGS="-arch $a -mmacosx-version-min=$MIN_MACOS"
+    $RUN make -C "$EMU" BUILD=build-macos-$a all gui
     for d in $DEVICES; do
-        $RUN make -C "$EMU" BUILD=build-macos-$a ARCH_FLAGS="$flags" DEVICE=$d firmware
+        $RUN make -C "$EMU" BUILD=build-macos-$a DEVICE=$d firmware
     done
 done
+unset ARCH_FLAGS
 join() {
     lipo -create $(for a in $ARCHS; do echo "$EMU/build-macos-$a/$1"; done) -output "$2"
 }
