@@ -40,7 +40,8 @@ jobs:
             pack: package-win64.sh --standalone
             out: mod-hw-emulator-desktop-win64.zip
     name: ${{ matrix.target }}
-    runs-on: ubuntu-latest
+    # not ubuntu-latest (26.04): wine does not start in the container there (socket: Function not implemented)
+    runs-on: ubuntu-24.04
     container:
       image: ubuntu:22.04
     permissions:
@@ -108,6 +109,17 @@ jobs:
             ~/PawPawBuilds
           key: ${{ matrix.target }}-${{ env.MOD_DESKTOP_REF }}-v${{ env.CACHE_VERSION }}
 
+      # the archives of the sources, kept from run to run: some sites (Launchpad, xiph) at times answer GitHub's
+      # runners with a page instead of the file, so each archive is downloaded once and then comes from here
+      - name: Restore the downloads
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/PawPawBuilds/downloads
+          key: downloads-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            downloads-${{ matrix.target }}-
+            downloads-
+
       # downloads.xiph.org drops the connections of GitHub's runners: the xiph archives come from the OSUOSL
       # mirror instead, checked, where PawPaw finds them already downloaded
       - name: Fetch the xiph archives
@@ -133,11 +145,20 @@ jobs:
         run: |
           echo "::notice::PawPaw's dependencies for ${{ matrix.target }} are built and will be cached at the end of this job: run the workflow again to build the package"
 
+      # a download answered with a page is removed and tried again a little later, a few times
       - name: Build MOD Desktop
         if: steps.cache.outputs.cache-hit == 'true'
         working-directory: mod-desktop
         run: |
-          make ${{ matrix.make }} -j$(nproc)
+          for attempt in 1 2 3 4; do
+              make -k ${{ matrix.make }} -j$(nproc) && exit 0
+              bad=$(../mod-hw-emulator/scripts/ci-bad-downloads.sh ~/PawPawBuilds/downloads)
+              [ -n "$bad" ] || exit 1
+              echo "::warning::not archives, downloaded again: $bad"
+              (cd ~/PawPawBuilds/downloads && rm -f $bad)
+              sleep 60
+          done
+          exit 1
       - name: Pack
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
@@ -149,6 +170,22 @@ jobs:
           name: ${{ matrix.out }}
           path: ${{ matrix.out }}
           compression-level: 0
+      # only good archives are kept, and only when there are new ones (the key names the set)
+      - name: Keep the downloads
+        id: downloads
+        if: always()
+        run: |
+          cd ~/PawPawBuilds/downloads 2> /dev/null || exit 0
+          bad=$("$GITHUB_WORKSPACE"/mod-hw-emulator/scripts/ci-bad-downloads.sh .)
+          [ -z "$bad" ] || rm -f $bad
+          echo "set=$(ls | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/save@v4
+        if: always() && steps.downloads.outputs.set != ''
+        continue-on-error: true
+        with:
+          path: ~/PawPawBuilds/downloads
+          key: downloads-${{ matrix.target }}-${{ steps.downloads.outputs.set }}
+
       - uses: softprops/action-gh-release@v2
         if: steps.cache.outputs.cache-hit == 'true' && startsWith(github.ref, 'refs/tags/')
         with:
