@@ -34,16 +34,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # not ubuntu-latest (26.04): wine does not start in the container there (socket: Function not implemented)
+          # not ubuntu-latest (26.04): wine does not start in the container there (socket: Function not implemented);
+          # public DNS servers: the container's own stopped resolving archive.ubuntu.com
           - target: linux-x86_64
             os: ubuntu-24.04
-            container: ubuntu:22.04
+            container:
+              image: ubuntu:22.04
+              options: --dns 1.1.1.1 --dns 8.8.8.8
             make: ''
             pack: package-linux.sh
             out: mod-hw-emulator-desktop-linux-x86_64.tar.xz
           - target: win64
             os: ubuntu-24.04
-            container: ubuntu:22.04
+            container:
+              image: ubuntu:22.04
+              options: --dns 1.1.1.1 --dns 8.8.8.8
             make: win64
             pack: package-win64.sh --standalone
             out: mod-hw-emulator-desktop-win64.zip
@@ -64,6 +69,7 @@ jobs:
       - name: Install git
         if: runner.os == 'Linux'
         run: |
+          cat /etc/resolv.conf
           for attempt in 1 2 3 4 5; do
               apt-get update -qq && apt-get install -yqq --no-install-recommends ca-certificates git openssl && exit 0
               sleep 30
@@ -208,8 +214,9 @@ jobs:
         if: steps.cache.outputs.cache-hit == 'true'
         working-directory: mod-desktop
         run: |
+          set -o pipefail
           for attempt in 1 2 3 4; do
-              make -k ${{ matrix.make }} -j$(getconf _NPROCESSORS_ONLN) && exit 0
+              make -k ${{ matrix.make }} -j$(getconf _NPROCESSORS_ONLN) 2>&1 | tee make.log && exit 0
               bad=$(../mod-hw-emulator/scripts/ci-bad-downloads.sh ~/PawPawBuilds/downloads)
               if [ -n "$bad" ]; then
                   echo "::warning::not archives, downloaded again: $bad"
@@ -218,6 +225,13 @@ jobs:
               echo "::warning::attempt $attempt failed, trying again"
               sleep 60
           done
+          # some third-party plugins do not build with the Xcode of macos-15 (GNU linker options and the like):
+          # on macOS the package goes without them, and says which they are; elsewhere it is an error
+          if [ "$RUNNER_OS" = macOS ] && [ -x build/mod-desktop.app/Contents/MacOS/mod-desktop ]; then
+              grep -o 'build-plugin-stamps/[^,]*,' make.log | sed 's|.*/||; s|,$||' | sort -u > missing-plugins.txt
+              echo "::warning::plugins left out on macOS: $(tr '\n' ' ' < missing-plugins.txt)"
+              exit 0
+          fi
           exit 1
       - name: Pack
         if: steps.cache.outputs.cache-hit == 'true'

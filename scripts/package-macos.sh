@@ -183,6 +183,15 @@ then start it from a terminal:
 Its data (pedalboards, user files) is in mod-hw-emulator/data, apart from an installed MOD Desktop
 (--shared-data uses that one's, ~/Documents/MOD Desktop).
 EOF
+# plugins of MOD Desktop that did not build for macOS (missing-plugins.txt, written by the release workflow)
+if [ -s "$MOD_DESKTOP/missing-plugins.txt" ]; then
+    {
+        echo
+        echo "These plugins of MOD Desktop do not build for macOS yet and are not in this package:"
+        echo
+        sed 's/^/    /' "$MOD_DESKTOP/missing-plugins.txt"
+    } >> "$PKG/README.txt"
+fi
 
 rm -f "$OUT"
 (cd "$STAGE" && ditto -c -k --keepParent mod-hw-emulator "$OUT")
