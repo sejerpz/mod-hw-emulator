@@ -198,6 +198,14 @@ mod-hw-emulator/mhe-desktop.sh                    # --device duox, --shared-data
 As MOD Desktop's own Linux build, the launcher and the emulator use the Qt 5 of the system (Debian/Ubuntu:
 `libqt5widgets5`); it runs on glibc 2.35 (Ubuntu 22.04) or later, WSL with WSLg included.
 
+## Release builds
+
+[.github/workflows/release.yml](.github/workflows/release.yml) builds both standalone packages on GitHub
+Actions, from the forks of the firmwares, mod-host and mod-system-control and the mod-desktop commit it names:
+run it by hand (Actions, release, Run workflow) for the packages as artifacts of the run, or push a tag `v*`
+to also attach them to a draft release of that tag. A run whose PawPaw dependencies are not in the cache yet
+(a new mod-desktop commit) only builds and caches them: run it again for the packages.
+
 ## Layout
 
 | Path | What |
