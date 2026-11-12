@@ -161,7 +161,7 @@ other URIs. The HMI widget areas (`mod-hardware-descriptor.d/`) follow the alabs
 two displays in `hmi_widget_displays`, side by side on a surface 256 wide, each with the controls it shows and the
 15 areas of the stock layout (knobs, endless knob band, button footers, full screen), in display coordinates.
 mod-ui sends them on the surface, x 128 and on for the right display, and an area stays on one display
-(the firmware's `wip/dwarf-backport` refuses one that crosses).
+(the firmware of branch `devel` refuses one that crosses).
 
 sys_host.c of mod-system-control is built for one device (`_MOD_DEVICE_DWARF`, `_MOD_DEVICE_DUOX`: pages,
 subpages, actuators of its page cache), and the hosts load any device. So it is built once per device

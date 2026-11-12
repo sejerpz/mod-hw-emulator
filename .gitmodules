@@ -1,7 +1,7 @@
 [submodule "deps/mod-duox-controller"]
 	path = deps/mod-duox-controller
 	url = https://github.com/sejerpz/mod-duox-controller.git
-	branch = master
+	branch = devel
 	shallow = true
 [submodule "deps/mod-dwarf-controller"]
 	path = deps/mod-dwarf-controller

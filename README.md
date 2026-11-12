@@ -30,7 +30,7 @@ each, on the branch it follows:
 | Submodule | Repository, branch | For |
 |---|---|---|
 | `deps/mod-dwarf-controller` | [sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) `feature/mod-hw-emulator` | the Dwarf firmware (`FW_DWARF`) |
-| `deps/mod-duox-controller` | [sejerpz/mod-duox-controller](https://github.com/sejerpz/mod-duox-controller) `master` | the Duo X firmware (`FW_DUOX`) |
+| `deps/mod-duox-controller` | [sejerpz/mod-duox-controller](https://github.com/sejerpz/mod-duox-controller) `devel` | the Duo X firmware (`FW_DUOX`), with the HMI widgets |
 | `deps/mod-duo-controller` | [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) `feature/mod-hw-emulator` | the Duo firmware (`FW_DUO`) |
 | `deps/mod-system-control` | [sejerpz/mod-system-control](https://github.com/sejerpz/mod-system-control) `feature/hmi-widgets` | `sys_host.c` in the hosts (`MSC`) |
 | `deps/mod-host` | [sejerpz/mod-host](https://github.com/sejerpz/mod-host) `feature/mod-hw-emulator` | mod-host of the packages, `scripts/run-mod-host.sh` (`MOD_HOST`) |
@@ -113,8 +113,9 @@ With mod-ui as for the Dwarf (below), with the Duo X descriptor:
 `MOD_HARDWARE_DESC_FILE=../../../../devices/duox/mod-hardware-descriptor.json`, or
 `scripts/run-mod-ui.sh --device duox deps/mod-desktop/src/mod-ui`. It is written from
 the firmware, not taken from the device. Its HMI widget areas (`mod-hardware-descriptor.d/`) are those of the
-alabs-hmi-widgets specification, two displays with 15 areas each: mod-ui places widgets on them, but the Duo X
-firmware does not draw them yet (see "Device profile" in [DESIGN.md](DESIGN.md)).
+alabs-hmi-widgets specification, two displays with 15 areas each: mod-ui places widgets on them and the Duo X
+firmware of branch `devel` draws them (see "Device profile" in [DESIGN.md](DESIGN.md)). mod-audio's `master`
+does not know the widget commands.
 
 ### MOD Duo
 
