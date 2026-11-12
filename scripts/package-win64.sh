@@ -91,7 +91,7 @@ $RUN make -C "$STAGE/launcher/src/systray"
 cp "$STAGE/launcher/src/systray/mod-desktop.exe" "$OVL/"
 
 # the emulator, with the Qt of MOD Desktop, and the firmware of each device
-DEVICES="dwarf duox"
+DEVICES="dwarf duox duo"
 $RUN make -C "$EMU" BUILD=build-win64 all gui
 for d in $DEVICES; do
     $RUN make -C "$EMU" BUILD=build-win64 DEVICE=$d firmware
@@ -140,6 +140,7 @@ if $STANDALONE; then
 
     DWARF=$(cd "$EMU" && realpath -m "${FW_DWARF:-deps/mod-dwarf-controller}")
     DUOX=$(cd "$EMU" && realpath -m "${FW_DUOX:-deps/mod-duox-controller}")
+    DUO=$(cd "$EMU" && realpath -m "${FW_DUO:-deps/mod-duo-controller}")
     rev() { git -C "$1" rev-parse HEAD 2> /dev/null || echo "${2:-unknown}"; }
     describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo unknown; }
     {
@@ -155,6 +156,7 @@ if $STANDALONE; then
         echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
         echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
         echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
+        echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), fork of mod-audio/mod-duo-controller)"
         echo
         echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
         echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

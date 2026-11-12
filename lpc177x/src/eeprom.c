@@ -7,12 +7,15 @@
 
 #include "emu_core.h"
 
-#include "LPC177x_8x.h"
-#include "lpc177x_8x_eeprom.h"
+/* the NXP driver library of the firmware, for its MCU family (LPC177x_8x, LPC17xx) */
+#include "device.h"
 
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+
+/* only the LPC177x has an EEPROM: on the LPC17xx (MOD Duo) the firmware keeps no settings */
+#ifdef LPC177x_8x
 
 /* the driver masks the page number to 6 bits: room for 64 pages */
 #define EEPROM_SIZE (EEPROM_PAGE_SIZE * 64)
@@ -122,3 +125,10 @@ void EEPROM_PowerDown(FunctionalState NewState)
 {
     (void)NewState;
 }
+
+#else
+
+void emu_eeprom_set_file(const char *path) { (void)path; }
+void emu_eeprom_flush(void) {}
+
+#endif

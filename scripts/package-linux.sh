@@ -27,7 +27,7 @@ ARCH=$(uname -m)
 OUT=$(realpath -m "${3:-mod-hw-emulator-desktop-linux-$ARCH.tar.xz}")
 TARGET=linux-$ARCH
 RUN="$MOD_DESKTOP/utils/run.sh $TARGET"
-DEVICES="dwarf duox"
+DEVICES="dwarf duox duo"
 
 # the mod-ui MOD Desktop was built with: the one of mod-hw-emulator has the HMI line over TCP
 if ! grep -q "tcp://" "$MOD_DESKTOP/src/mod-ui/mod/hmi.py"; then
@@ -98,6 +98,7 @@ cp "$MOD_DESKTOP/LICENSE" "$PKG/LICENSE-mod-desktop.txt"
 
 DWARF=$(cd "$EMU" && realpath -m "${FW_DWARF:-deps/mod-dwarf-controller}")
 DUOX=$(cd "$EMU" && realpath -m "${FW_DUOX:-deps/mod-duox-controller}")
+DUO=$(cd "$EMU" && realpath -m "${FW_DUO:-deps/mod-duo-controller}")
 rev() { git -C "$1" rev-parse HEAD 2> /dev/null || echo "${2:-unknown}"; }
 describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo unknown; }
 {
@@ -113,6 +114,7 @@ describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo u
     echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
     echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
     echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
+    echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), fork of mod-audio/mod-duo-controller)"
     echo
     echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
     echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

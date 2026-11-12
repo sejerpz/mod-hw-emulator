@@ -7,8 +7,8 @@
 
 #include "emu_core.h"
 
-#include "LPC177x_8x.h"
-#include "lpc177x_8x_timer.h"
+/* the NXP driver library of the firmware, for its MCU family (LPC177x_8x, LPC17xx) */
+#include "device.h"
 
 #define N_TIMERS 4
 #define PCLK_HZ  60000000u

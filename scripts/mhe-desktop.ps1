@@ -22,7 +22,7 @@
 # plugins, settings in Documents\MOD Desktop) is the same as with the installed MOD Desktop: quit that one first.
 
 param(
-    [ValidateSet('dwarf', 'duox')]
+    [ValidateSet('dwarf', 'duox', 'duo')]
     [string]$Device = 'dwarf',
     [string]$ModDesktop = "$env:ProgramFiles\MOD Desktop",
     [string]$Overlay = "$env:LOCALAPPDATA\mod-hw-emulator\mod-desktop",

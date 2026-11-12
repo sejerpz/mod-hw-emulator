@@ -9,8 +9,8 @@
 
 #include "emu_core.h"
 
-#include "LPC177x_8x.h"
-#include "lpc177x_8x_ssp.h"
+/* the NXP driver library of the firmware, for its MCU family (LPC177x_8x, LPC17xx) */
+#include "device.h"
 
 #include <string.h>
 
@@ -27,7 +27,9 @@ static int ssp_index(LPC_SSP_TypeDef *SSPx)
 {
     if (SSPx == LPC_SSP0) return 0;
     if (SSPx == LPC_SSP1) return 1;
+#ifdef LPC_SSP2   /* not on the LPC17xx */
     if (SSPx == LPC_SSP2) return 2;
+#endif
     return -1;
 }
 

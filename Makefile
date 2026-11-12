@@ -67,17 +67,18 @@ all: firmware $(BUILD)/mhe-run$(EXE_EXT)
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
 
 # ---------------------------------------------------------------------------------------------------------------
-# emulation layer (compiled into every LPC177x module)
+# emulation layer (compiled into every module, against the NXP driver library of its MCU family)
 
 EMU_SRC = $(wildcard lpc177x/src/*.c) $(wildcard chips/*.c)
 
 # ---------------------------------------------------------------------------------------------------------------
-# firmware module of DEVICE: devices/<device>/device.mk names its sources (FW_REPO, FW_CONFIG, FW_DRIVERS),
-# devices/<device>/board.c binds its pins
+# firmware module of DEVICE: devices/<device>/device.mk names its sources (FW_REPO, FW_CONFIG, FW_DRIVERS)
+# and its MCU family (FW_SERIE: LPC177x_8x, the default, or LPC17xx), devices/<device>/board.c binds its pins
 
 ifeq ($(wildcard devices/$(DEVICE)/device.mk),)
 $(error DEVICE=$(DEVICE): no devices/$(DEVICE)/device.mk)
 endif
+FW_SERIE = LPC177x_8x
 include devices/$(DEVICE)/device.mk
 
 # FW_REPO is built in place, local changes included (describe ends in -dirty); FW_REF builds one of its
@@ -120,9 +121,9 @@ MOD_STAGE  = $(MOD_BUILD)/stage
 
 # Staged headers. A quoted #include looks first in the directory of the including file, so the CMSIS core,
 # the FreeRTOS port and config cannot be replaced through -I: they are replaced in copies of their folders.
-# LPC177x_8x.h is wrapped (peripherals the firmware reads as registers); config.h is the device
-# configuration the firmware Makefile links for its target.
-CMSIS_INC = $(MOD_SRC)/nxp-lpc/CMSISv2p00_LPC177x_8x/inc
+# LPC177x_8x.h is wrapped (peripherals the firmware reads as registers; the LPC17xx firmware reads none);
+# config.h is the device configuration the firmware Makefile links for its target.
+CMSIS_INC = $(MOD_SRC)/nxp-lpc/CMSISv2p00_$(FW_SERIE)/inc
 $(MOD_STAGE)/.stamp: $(wildcard $(MOD_SRC)/freertos/inc/*.h $(CMSIS_INC)/*.h) \
                      $(wildcard lpc177x/include/*.h) $(MOD_SRC)/app/inc/$(FW_CONFIG)
 	@rm -rf $(MOD_STAGE) && mkdir -p $(MOD_STAGE)/freertos $(MOD_STAGE)/cmsis $(MOD_STAGE)/config
@@ -130,20 +131,23 @@ $(MOD_STAGE)/.stamp: $(wildcard $(MOD_SRC)/freertos/inc/*.h $(CMSIS_INC)/*.h) \
 	mv $(MOD_STAGE)/freertos/FreeRTOSConfig.h $(MOD_STAGE)/freertos/FreeRTOSConfig_fw.h
 	cp lpc177x/include/FreeRTOSConfig.h lpc177x/include/portmacro.h $(MOD_STAGE)/freertos/
 	cp $(CMSIS_INC)/*.h $(MOD_STAGE)/cmsis/
+	cp lpc177x/include/core_cm3.h $(MOD_STAGE)/cmsis/
+ifeq ($(FW_SERIE),LPC177x_8x)
 	mv $(MOD_STAGE)/cmsis/LPC177x_8x.h $(MOD_STAGE)/cmsis/LPC177x_8x_fw.h
-	cp lpc177x/include/core_cm3.h lpc177x/include/LPC177x_8x.h $(MOD_STAGE)/cmsis/
+	cp lpc177x/include/LPC177x_8x.h $(MOD_STAGE)/cmsis/
+endif
 	cp $(MOD_SRC)/app/inc/$(FW_CONFIG) $(MOD_STAGE)/config/config.h
 	@touch $@
 
 MOD_INC = -I$(MOD_STAGE)/freertos -I$(MOD_STAGE)/cmsis -I$(MOD_STAGE)/config \
           -Ilpc177x/src -Ichips -Iinclude \
           -I$(MOD_SRC)/nxp-lpc \
-          -I$(MOD_SRC)/nxp-lpc/LPC177x_8xLib/inc \
+          -I$(MOD_SRC)/nxp-lpc/$(FW_SERIE)Lib/inc \
           -I$(MOD_SRC)/drivers/inc \
           -I$(MOD_SRC)/app/inc \
           -I$(MOD_SRC)/mod-controller-proto
 
-MOD_CFLAGS = $(COMMON_CFLAGS) $(MOD_INC) -DLPC177x_8x -DCCC_ANALYZER -DMOD_HW_EMULATOR \
+MOD_CFLAGS = $(COMMON_CFLAGS) $(MOD_INC) -D$(FW_SERIE) -DCCC_ANALYZER -DMOD_HW_EMULATOR \
              -DVERSION_HASH=\"v.$(MOD_GIT_HASH)\" -fcommon \
              -DMHE_FW_DESCRIBE=\"$(MOD_DESCRIBE)\" -DMHE_FW_TAG=\"$(MOD_TAG)\" \
              -DMHE_FW_COMMIT=\"$(MOD_COMMIT)\" -DMHE_FW_DATE=\"$(MOD_DATE)\"

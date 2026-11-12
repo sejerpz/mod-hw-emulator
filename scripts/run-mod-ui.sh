@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a mod-ui checkout against the emulated controller, through its debug-server.sh.
 #
-#   scripts/run-mod-ui.sh [--device dwarf|duox] MOD_UI_DIR [PORT]
+#   scripts/run-mod-ui.sh [--device dwarf|duox|duo] MOD_UI_DIR [PORT]
 #
 # Start the emulator first: build/mhe-run --tcp webgui=PORT build/fw-<device>.so (PORT 9900 by default).
 # The device (dwarf by default) picks the hardware descriptor mod-ui reads, devices/<device>/.
@@ -26,11 +26,11 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-UI=$(cd "${1:?usage: $0 [--device dwarf|duox] MOD_UI_DIR [PORT]}" && pwd)
+UI=$(cd "${1:?usage: $0 [--device dwarf|duox|duo] MOD_UI_DIR [PORT]}" && pwd)
 PORT=${2:-9900}
 
 if [ ! -f "$EMU/devices/$DEVICE/mod-hardware-descriptor.json" ]; then
-    echo "no device '$DEVICE': dwarf or duox" >&2
+    echo "no device '$DEVICE': dwarf, duox or duo" >&2
     exit 1
 fi
 

@@ -1,6 +1,6 @@
 # mod-hw-emulator — design
 
-An emulator of the MOD hardware controllers (Dwarf first, Duo and Duo X later) that runs the **real controller
+An emulator of the MOD hardware controllers (Dwarf, Duo X and Duo) that runs the **real controller
 firmware** on a desktop computer, next to [mod-desktop](https://github.com/mod-audio/mod-desktop), so that
 HMI features — first of all [aLabs HMI widgets](https://github.com/sejerpz/alabs-hmi-widgets) — can be developed
 and tested without a device.
@@ -172,6 +172,29 @@ and its led, headless and in the user interface (skin and `--simple`). Built, no
 with mod-ui and a pedalboard, sys_host.c for the Duo X with mod-host. The jack leds of the skin
 (Input/Output 1/2): the device profile has no led for them, they stay off.
 
+**Duo** (`devices/duo`, mod-audio `mod-duo-controller`, LPC1759): the other MCU family, LPC17xx, with its own
+NXP driver library (`lpc17xx_*.h`) in the firmware tree. `device.mk` names it (`FW_SERIE = LPC17xx`), and
+the Makefile takes the CMSIS headers and the library of that family and defines `LPC17xx`; the emulation
+layer includes the firmware's `device.h`, which picks the headers of the family, so the same sources serve
+both. The driver calls the Duo makes have the same signatures on both families, with three differences
+handled in place: `PINSEL_SetPinFunc` returns nothing, the ADC data registers are `ADDR0..7` instead of
+`DR[]`, there is no SSP2; and no EEPROM (`eeprom.c` only on the LPC177x). Its `LPC17xx.h` is not wrapped: the
+Duo firmware reads no peripheral register directly. The board is the Duo X one cut down: two UC1701 displays on
+SSP0, two encoders with a push, two footswitches, two RGB leds that light on a low pin (`LED_TURN_ON_WITH_ZERO`),
+two serial lines (webgui, cli). The display brightness is software PWM of the backlight pins in `TIMER0`, so
+the board samples it in 1/16 steps; each display keeps its own frame, so that a brightness change alone sends
+the right frame again (the Duo X had one frame for both: a dimmed display showed the other one's picture).
+
+It speaks the protocol of its time: no `sys_*` line, `is` for the pedalboards of the bank, `bc` for the
+footswitch bank functions, `boot` with brightness, quick bypass, tuner mute and profile; `plb`/`ple` of newer
+mod-ui are answered "not found" and ignored. `devices/duo/mod-hardware-descriptor.json` is written from the
+firmware: four actuators (hw_id 0-1 the knobs, 2-3 the footswitches), bank navigation, `hmi_set_index`, no
+addressing pages, no EEPROM. Firmware bug found: `bank_config_footer()` reads the footswitch pedalboard names
+before mod-ui has sent any (`bc` comes before `is`), a NULL read; fixed on the fork's `feature/mod-hw-emulator`.
+
+Checked: boot logo, login on the console line, mod-ui (fake host) end to end with `pcl`, `bc`, `is`, `boot`;
+a control on a knob and a footswitch headless; the user interface with the Duo skin.
+
 ### UI
 
 - Controls are widgets bound to logical ids: LCD (scaled framebuffer, pixel grid, backlight colour), encoder
@@ -237,7 +260,8 @@ with mod-ui and a pedalboard, sys_host.c for the Duo X with mod-host. The jack l
    `mhe-desktop.cmd` over MOD Desktop built from mod-desktop main (the 0.14 release): mod-ui on the HMI line
    (9900), mod-host on `/sys_msgs` (9901), the pedalboard on the emulated display. Plugin widgets there: not
    tried (MOD Desktop's mod-ui has no Display dialog). Linux overlay: to do.
-6. **Done** — Skin layout, Dwarf and Duo X panel pictures, Duo X profile (without mod-ui yet). Duo: to do.
+6. **Done** — Skin layout, Dwarf, Duo X and Duo panel pictures and profiles (the Duo X without mod-ui yet; the
+   Duo with mod-ui, on the LPC17xx family).
 
 ## What the spike taught
 

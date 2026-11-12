@@ -48,7 +48,7 @@ fi
 
 descriptor="$here/devices/$device/mod-desktop-descriptor.json"
 if [ ! -f "$descriptor" ] || [ ! -f "$firmware" ]; then
-    echo "no device '$device' here: dwarf or duox" >&2
+    echo "no device '$device' here: dwarf, duox or duo" >&2
     exit 1
 fi
 # the emulator's EEPROM and settings, one per device

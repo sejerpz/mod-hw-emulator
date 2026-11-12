@@ -1,0 +1,53 @@
+{
+  "name": "MOD Duo",
+  "architecture": "armhf",
+  "platform": "duo",
+  "bin-compat": "armhf-a7",
+  "gpio_platform": "",
+  "codec_truebypass": true,
+  "factory_pedalboards": false,
+  "has_noisegate": false,
+  "hmi_actuator_group_prefix": false,
+  "hmi_bank_navigation": true,
+  "hmi_eeprom": false,
+  "hmi_set_index": true,
+  "hmi_set_master_vol": false,
+  "hmi_set_pb_name": false,
+  "hmi_set_ss_name": false,
+  "hmi_set_tuner_input": false,
+  "hmi_set_tuner_ref_freq": false,
+  "hmi_show_empty_pages": false,
+  "hmi_subpages": false,
+  "addressing_pages": 0,
+  "actuators": [
+    {
+      "uri"  : "/hmi/knob1",
+      "name" : "Knob 1",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "id": 0
+    },{
+      "uri"  : "/hmi/knob2",
+      "name" : "Knob 2",
+      "modes": ":enumeration:scalepoints:logarithmic:integer:float:bypass:trigger:toggled:",
+      "steps": [201],
+      "max_assigns": 1,
+      "id": 1
+    },{
+      "uri"  : "/hmi/footswitch1",
+      "name" : "Footswitch 1",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 2
+    },{
+      "uri"  : "/hmi/footswitch2",
+      "name" : "Footswitch 2",
+      "modes": ":bypass:taptempo:enumeration:trigger:toggled:",
+      "steps": [],
+      "max_assigns": 1,
+      "id": 3
+    }
+  ]
+}

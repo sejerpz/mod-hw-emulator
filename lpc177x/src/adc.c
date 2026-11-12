@@ -1,5 +1,5 @@
 /*
- * mod-hw-emulator — LPC177x ADC driver API (lpc177x_8x_adc.h)
+ * mod-hw-emulator — LPC177x/LPC17xx ADC driver API (lpc177x_8x_adc.h, lpc17xx_adc.h)
  *
  * Burst mode as the firmware leaves it: every enabled channel always holds a finished conversion of the
  * level the host gives it (a potentiometer). The data registers are a real block, emu_adc_regs, because the
@@ -8,12 +8,19 @@
 
 #include "emu_core.h"
 
-#include "LPC177x_8x.h"
-#include "lpc177x_8x_adc.h"
+/* the NXP driver library of the firmware, for its MCU family (LPC177x_8x, LPC17xx) */
+#include "device.h"
 
 #include <stdatomic.h>
 
 LPC_ADC_TypeDef emu_adc_regs;
+
+/* the data register of a channel: DR[] on the LPC177x, ADDR0..ADDR7 on the LPC17xx (MOD Duo, no ADC in use) */
+#ifdef LPC17xx
+#define ADC_DR(channel) (((volatile uint32_t *)&emu_adc_regs.ADDR0)[channel])
+#else
+#define ADC_DR(channel) (emu_adc_regs.DR[channel])
+#endif
 
 /* 12 bit levels, mid travel until the host says otherwise */
 static _Atomic uint16_t g_level[EMU_ADC_CHANNELS] = { 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048 };
@@ -21,7 +28,7 @@ static _Atomic uint16_t g_level[EMU_ADC_CHANNELS] = { 2048, 2048, 2048, 2048, 20
 static void convert(uint8_t channel)
 {
     /* RESULT in bits 4..15, DONE in bit 31 */
-    emu_adc_regs.DR[channel] = ADC_DR_DONE_FLAG | ((uint32_t)atomic_load(&g_level[channel]) << 4);
+    ADC_DR(channel) = ADC_DR_DONE_FLAG | ((uint32_t)atomic_load(&g_level[channel]) << 4);
 }
 
 void emu_adc_set(uint8_t channel, uint16_t value)
@@ -71,7 +78,7 @@ FlagStatus ADC_ChannelGetStatus(LPC_ADC_TypeDef *ADCx, uint8_t channel, uint32_t
 uint32_t ADC_GlobalGetData(LPC_ADC_TypeDef *ADCx)
 {
     (void)ADCx;
-    return emu_adc_regs.DR[0];
+    return ADC_DR(0);
 }
 
 FlagStatus ADC_GlobalGetStatus(LPC_ADC_TypeDef *ADCx, uint32_t StatusType)

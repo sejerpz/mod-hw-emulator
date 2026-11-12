@@ -219,10 +219,10 @@ jobs:
           ditto -x -k ${{ matrix.out }} $t
           cd $t/mod-hw-emulator
           bin="MOD Desktop.app/Contents/MacOS"
-          for f in "$bin/mod-hw-emulator" "$bin/mod-desktop" "$bin/jack/mod-host.so" fw-dwarf.dylib fw-duox.dylib; do
+          for f in "$bin/mod-hw-emulator" "$bin/mod-desktop" "$bin/jack/mod-host.so" fw-dwarf.dylib fw-duox.dylib fw-duo.dylib; do
               echo "$f: $(lipo -archs "$f")"
           done
-          for d in dwarf duox; do
+          for d in dwarf duox duo; do
               "$bin/mod-hw-emulator" --state $t/state-$d --screenshot $GITHUB_WORKSPACE/try-$d.png --after 6000 $PWD/fw-$d.dylib
           done
       - uses: actions/upload-artifact@v4

@@ -8,8 +8,8 @@
 
 #include "emu_core.h"
 
-#include "LPC177x_8x.h"
-#include "lpc177x_8x_gpio.h"
+/* the NXP driver library of the firmware, for its MCU family (LPC177x_8x, LPC17xx) */
+#include "device.h"
 
 #include <pthread.h>
 #include <stdatomic.h>

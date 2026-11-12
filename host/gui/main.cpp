@@ -231,11 +231,7 @@ public:
             simpleLayout(central, loose);
         setCentralWidget(central);
 
-        statusBar()->showMessage(m_pots.empty()
-            ? QStringLiteral("Q/A W/S E/D turn, 1 2 3 push, Z X C footswitches, F1-F4 buttons; "
-                             "Ctrl+click arms a switch to press it with the next one")
-            : QStringLiteral("Q/A W/S turn, 1 2 push, Z X C V footswitches, F1-F3 buttons; wheel or drag on a "
-                             "potentiometer, double click centres it"));
+        statusBar()->showMessage(keysHint());
 
         /* switch keys pressed close together go down together, see key() */
         m_keyChord.setSingleShot(true);
@@ -405,6 +401,37 @@ protected:
     }
 
 private:
+    /* the keys of key(), for the controls this device has */
+    QString keysHint() const
+    {
+        static const char *const turn[] = { "Q/A", "W/S", "E/D" };
+        static const char *const push[] = { "1", "2", "3" };
+        static const char *const foot[] = { "Z", "X", "C", "V" };
+        static const char *const button[] = { "F1", "F2", "F3", "F4" };
+        auto list = [](const char *const *keys, size_t n, size_t max) {
+            QStringList l;
+            for (size_t i = 0; i < n && i < max; ++i)
+                l << QString::fromLatin1(keys[i]);
+            return l.join(QLatin1Char(' '));
+        };
+
+        QStringList parts;
+        if (! m_encoders.empty())
+            parts << list(turn, m_encoders.size(), 3) + QStringLiteral(" turn, ")
+                     + list(push, m_encoders.size(), 3) + QStringLiteral(" push");
+        if (! m_footswitches.empty())
+            parts << list(foot, m_footswitches.size(), 4) + QStringLiteral(" footswitches");
+        if (! m_buttons.empty())
+            parts << QStringLiteral("%1-%2 buttons").arg(QLatin1String(button[0]),
+                                                         QLatin1String(button[qMin<size_t>(m_buttons.size(), 4) - 1]));
+        QString hint = parts.join(QStringLiteral(", "));
+        if (! m_pots.empty())
+            hint += QStringLiteral("; wheel or drag on a potentiometer, double click centres it");
+        else if (m_footswitches.size() + m_buttons.size() > 1)
+            hint += QStringLiteral("; Ctrl+click arms a switch to press it with the next one");
+        return hint;
+    }
+
     static bool isTurnKey(int k)
     {
         return k == Qt::Key_Q || k == Qt::Key_A || k == Qt::Key_W || k == Qt::Key_S || k == Qt::Key_E

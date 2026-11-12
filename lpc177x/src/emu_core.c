@@ -286,7 +286,7 @@ void emu_core_stop(void)
  * CMSIS NVIC
  */
 
-#include "LPC177x_8x.h"
+#include "device.h"
 
 void NVIC_EnableIRQ(IRQn_Type IRQn)            { emu_irq_enable((int)IRQn, 1); }
 void NVIC_DisableIRQ(IRQn_Type IRQn)           { emu_irq_enable((int)IRQn, 0); }

@@ -1,6 +1,6 @@
 # mod-hw-emulator
 
-Runs the real MOD controller firmware (MOD Dwarf for now) on a desktop computer, to develop HMI features —
+Runs the real MOD controller firmware (MOD Dwarf, Duo X and Duo) on a desktop computer, to develop HMI features —
 [aLabs HMI widgets](https://github.com/sejerpz/alabs-hmi-widgets) first — together with mod-desktop.
 
 Experimental. See [DESIGN.md](DESIGN.md) for how it works.
@@ -10,7 +10,8 @@ Experimental. See [DESIGN.md](DESIGN.md) for how it works.
 Needs GCC or Clang (MinGW on Windows), GNU make and git.
 
 ```sh
-git submodule update --init --recursive --depth 1 deps/mod-dwarf-controller deps/mod-duox-controller deps/mod-system-control
+git submodule update --init --recursive --depth 1 deps/mod-dwarf-controller deps/mod-duox-controller \
+    deps/mod-duo-controller deps/mod-system-control
 make                           # build/fw-dwarf.so (.dll/.dylib) and build/mhe-run
 ```
 
@@ -30,14 +31,15 @@ each, on the branch it follows:
 |---|---|---|
 | `deps/mod-dwarf-controller` | [sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) `feature/mod-hw-emulator` | the Dwarf firmware (`FW_DWARF`) |
 | `deps/mod-duox-controller` | [sejerpz/mod-duox-controller](https://github.com/sejerpz/mod-duox-controller) `master` | the Duo X firmware (`FW_DUOX`) |
+| `deps/mod-duo-controller` | [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) `feature/mod-hw-emulator` | the Duo firmware (`FW_DUO`) |
 | `deps/mod-system-control` | [sejerpz/mod-system-control](https://github.com/sejerpz/mod-system-control) `feature/hmi-widgets` | `sys_host.c` in the hosts (`MSC`) |
 | `deps/mod-host` | [sejerpz/mod-host](https://github.com/sejerpz/mod-host) `feature/mod-hw-emulator` | mod-host of the packages, `scripts/run-mod-host.sh` (`MOD_HOST`) |
 | `deps/mod-desktop` | [sejerpz/mod-desktop](https://github.com/sejerpz/mod-desktop) `feature/mod-hw-emulator` | MOD Desktop of the packages, with [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) `feature/mod-hw-emulator` as its `src/mod-ui` |
 
 Each commit of mod-hw-emulator pins the commit of each one, and the packages are built from those: a tag
 builds the same sources again. `git clone --recursive` takes them all, MOD Desktop's many submodules
-included; for the emulator alone take only the first three, as above. After pushing to one of the forks,
-move the submodules to the tips of their branches and commit that:
+included; for the emulator alone take only the firmwares and mod-system-control, as above. After pushing to
+one of the forks, move the submodules to the tips of their branches and commit that:
 
 ```sh
 git submodule update --remote --depth 1 deps/mod-dwarf-controller   # or with no path: all of them
@@ -95,6 +97,24 @@ With mod-ui as for the Dwarf (below), with the Duo X descriptor:
 `scripts/run-mod-ui.sh --device duox ../mod-ui`. It is written from
 the firmware, not taken from the device, and has no HMI widgets: the Duo X firmware does not draw them (see
 "Device profile" in [DESIGN.md](DESIGN.md)). Not tried with mod-ui yet.
+
+### MOD Duo
+
+```sh
+make DEVICE=duo                    # build/fw-duo-<describe>.so, build/fw-duo.so
+build/mhe-run build/fw-duo.so "wait 2000" 'send webgui is 1 0 1 0 0 "Default" 0' \
+    'send webgui a 0 "Gain" 0 "dB" 0 -12 12 13 0' "wait 1500" "turn knob1 3" "wait 800" "snap duo.png"
+build/mod-hw-emulator build/fw-duo.so
+```
+
+The firmware is [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) branch
+`feature/mod-hw-emulator` (`deps/mod-duo-controller`, `make FW_DUO=path` for another checkout): mod-audio's
+`master` with a fix found with the emulator. The Duo is the older controller, an LPC1759, with two displays, two
+knobs (`Knob 1/2`, they push too) and two footswitches with their leds (`Footswitch 1/2`); Q/A W/S turn the
+knobs, 1 2 push them, Z X are the footswitches. It talks to mod-ui with the protocol of its time: `is` with the
+pedalboards of the bank, `a` for a control, `boot` with the display brightness; no mod-system-control line,
+no EEPROM. With mod-ui: `scripts/run-mod-ui.sh --device duo ../mod-ui`, or `mhe-desktop` with the Duo
+(`--device duo`, `-Device duo`).
 
 ## Try it headless
 
