@@ -28,6 +28,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -37,6 +38,7 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QProcess>
+#include <QScreen>
 #include <QStatusBar>
 #include <QMainWindow>
 #include <QThread>
@@ -64,7 +66,7 @@ struct Skin {
 /*
  * DIR/DEVICE-panel.json lists the pictures of the panel at their sizes with the rectangles on each
  * (devices/dwarf/skin/README.md). The largest picture is taken, sharp when the window grows; the window
- * starts at the size of the smallest.
+ * starts at the size of the smallest, or smaller to fit the screen (fitToScreen).
  */
 bool loadSkin(const QString &dir, const QString &device, Skin &skin)
 {
@@ -274,8 +276,8 @@ public:
         }
         root->addLayout(footswitches);
 
-        /* the display at 4x by default */
-        resize(sizeHint().expandedTo(QSize(620, 860)));
+        /* the display at 4x by default, less on a small screen */
+        fitToScreen(sizeHint().expandedTo(QSize(620, 860)), 0);
     }
 
     /* SkinLayout: every control on the rectangle of the same name; the display on "display_window" */
@@ -321,10 +323,26 @@ public:
             panel.place(lcd.second, spot->second);
         }
 
-        /* the picture at its nominal size */
-        const QSize size = skin.picture.size() / skin.scale;
-        resize(size.width(), size.height() + statusBar()->sizeHint().height() +
-                             (menuWidget() ? menuWidget()->sizeHint().height() : 0));
+        /* the picture at its nominal size, less on a small screen */
+        fitToScreen(skin.picture.size() / skin.scale,
+                    statusBar()->sizeHint().height() + (menuWidget() ? menuWidget()->sizeHint().height() : 0));
+    }
+
+    /* the window at SIZE (plus EXTRA rows for the menu and the status bar), made smaller, as it is, when it
+     * would take more than about half the width or two thirds of the height of the screen: it sits next to
+     * MOD Desktop, on a laptop too; the user can make it larger */
+    void fitToScreen(const QSize &size, int extra)
+    {
+        QSize fitted = size;
+        if (const QScreen *screen = QGuiApplication::primaryScreen())
+        {
+            const QRect free = screen->availableGeometry();
+            const double factor = std::min({1.0, free.width() * 0.45 / size.width(),
+                                            (free.height() * 0.65 - extra) / size.height()});
+            if (factor > 0)
+                fitted = size * factor;
+        }
+        resize(fitted.width(), fitted.height() + extra);
     }
 
     /* Firmware menu: the builds of the same device next to the module (fw-dwarf-<describe>.so, see the
