@@ -63,8 +63,10 @@ endif
 
 all: firmware $(BUILD)/mhe-run$(EXE_EXT)
 
-# header dependencies of every object built so far
+# header dependencies of every object built so far; they are never remade (make would try its built-in
+# rule %: %.o, through sys_host-%.o below, whenever sys_host.c changes)
 -include $(shell find $(BUILD) -name '*.d' 2>/dev/null)
+%.d: ;
 
 # ---------------------------------------------------------------------------------------------------------------
 # emulation layer (compiled into every module, against the NXP driver library of its MCU family)
