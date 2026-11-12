@@ -1,6 +1,6 @@
-# MOD Duo X: the mod-audio controller, from the sejerpz fork (scripts/fetch-firmware.sh duox clones it)
+# MOD Duo X: the mod-audio controller, from the sejerpz fork (the deps/mod-duox-controller submodule)
 
-FW_DUOX    ?= ../mod-duox-controller
+FW_DUOX    ?= deps/mod-duox-controller
 FW_REPO     = $(FW_DUOX)
 FW_CONFIG   = config-modduox.h
 # the displays are UC1701 (GLCD_DRIVER), ks0108.c is the driver of another board

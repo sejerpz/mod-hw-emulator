@@ -84,7 +84,7 @@ LPC177x family, and a new firmware revision needs no work on the emulator.
 
 ### Firmware sources
 
-The firmware is compiled from its own repository (see `scripts/fetch-firmware.sh`) with:
+The firmware is compiled from its own repository (the `deps/mod-dwarf-controller` submodule) with:
 
 - the include path of the emulation layer first, so its `core_cm3.h`, `portmacro.h` and `FreeRTOSConfig.h`
   wrapper win over the ARM ones;

@@ -1,0 +1,20 @@
+[submodule "deps/mod-duox-controller"]
+	path = deps/mod-duox-controller
+	url = https://github.com/sejerpz/mod-duox-controller.git
+	branch = master
+	shallow = true
+[submodule "deps/mod-dwarf-controller"]
+	path = deps/mod-dwarf-controller
+	url = https://github.com/sejerpz/mod-dwarf-controller.git
+	branch = feature/mod-hw-emulator
+	shallow = true
+[submodule "deps/mod-host"]
+	path = deps/mod-host
+	url = https://github.com/sejerpz/mod-host.git
+	branch = feature/mod-hw-emulator
+	shallow = true
+[submodule "deps/mod-system-control"]
+	path = deps/mod-system-control
+	url = https://github.com/sejerpz/mod-system-control.git
+	branch = feature/hmi-widgets
+	shallow = true

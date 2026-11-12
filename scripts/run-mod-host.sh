@@ -9,14 +9,14 @@
 # MOD_DEVICE_HOST_PORT. Pick another one when something else has 5555 (the Android emulator's adb, say; with
 # WSL mirrored networking the Windows ports count too).
 #
-# Environment: MOD_HOST (checkout, default ../mod-host), LV2_PATH (default ../plugins/lv2),
+# Environment: MOD_HOST (checkout, default deps/mod-host), LV2_PATH (default ../plugins/lv2),
 #              JACK_ARGS (default: dummy backend, 48 kHz, 256 frames).
 
 set -e
 
 EMU=$(cd "$(dirname "$0")/.." && pwd)
 PORT=${1:-5555}
-MOD_HOST=$(cd "${MOD_HOST:-$EMU/../mod-host}" && pwd)
+MOD_HOST=$(cd "${MOD_HOST:-$EMU/deps/mod-host}" && pwd)
 export LV2_PATH=${LV2_PATH:-$(cd "$EMU/../plugins/lv2" && pwd)}
 JACK_ARGS=${JACK_ARGS:--d dummy -r 48000 -p 256}
 

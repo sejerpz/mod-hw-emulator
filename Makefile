@@ -3,8 +3,8 @@
 #   make                 firmware module of DEVICE (dwarf by default) and the headless runner
 #   make DEVICE=duox     the MOD Duo X instead (one devices/<device>/device.mk per device)
 #   make gui             Qt5 user interface (pkg-config Qt5Widgets)
-#   make FW_DWARF=path   another checkout of mod-dwarf-controller (default: ../mod-dwarf-controller);
-#                        FW_DUOX for the Duo X (default: ../mod-duox-controller)
+#   make FW_DWARF=path   another checkout of mod-dwarf-controller (default: deps/mod-dwarf-controller);
+#                        FW_DUOX for the Duo X (default: deps/mod-duox-controller)
 #   make FW_REF=stls18   a tag, branch or commit of that checkout, without touching it
 #   make firmware        only the firmware module
 #
@@ -53,7 +53,7 @@ endif
 # mod-system-control: its sys_host.c (the mod-host side: labels, leds, widget bitmaps through /sys_msgs) is
 # built into the hosts when the checkout is there; over TCP on Windows (MOD_SYS_SERIAL_PORT). It is built for
 # one device (_MOD_DEVICE_DWARF...), so once per device, its functions renamed (host/common/msc-shim/sys_host_device.h)
-MSC ?= ../mod-system-control
+MSC ?= deps/mod-system-control
 SYS_HOST_DEVICES = dwarf duox
 ifneq (,$(wildcard $(MSC)/src/sys_host.c))
 SYS_HOST_SRC    = $(MSC)/src/sys_host.c
@@ -255,7 +255,7 @@ clean:
 # ---------------------------------------------------------------------------------------------------------------
 # tools: mhe-fake-host plays mod-host on /sys_msgs (needs a mod-host checkout for its sys_host.h)
 
-MOD_HOST ?= ../mod-host
+MOD_HOST ?= deps/mod-host
 
 tools: $(BUILD)/mhe-fake-host
 

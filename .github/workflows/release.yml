@@ -2,6 +2,10 @@
 # CI builds MOD Desktop. Run by hand (Actions > release > Run workflow) or by pushing a tag v*, which also
 # attaches the packages to a draft release of that tag.
 #
+# Everything is built from the submodules of mod-hw-emulator in deps/, at the commits they pin: MOD Desktop
+# (sejerpz/mod-desktop, with the mod-ui of mod-hw-emulator as its src/mod-ui), mod-host, mod-system-control and
+# the firmwares.
+#
 # The PawPaw dependencies of MOD Desktop take a while: like mod-desktop's CI, a run without them in the cache
 # only builds and caches them, and MOD Desktop and the package are built by the next run.
 
@@ -14,8 +18,10 @@ on:
       - 'v*'
 
 env:
-  # mod-desktop main the packages are built from (0.14-2)
+  # the mod-audio/mod-desktop commit (main, 0.14-2) deps/mod-desktop is built on: it names PawPaw's cache, so
+  # change it with the PawPaw of deps/mod-desktop
   MOD_DESKTOP_REF: 9367cbcf803376aa4c72a97ad6f65f4c8126336b
+  MD: mod-hw-emulator/deps/mod-desktop
   CACHE_VERSION: 1
   DEBIAN_FRONTEND: noninteractive
   PAWPAW_FAST_MATH: 1
@@ -81,69 +87,31 @@ jobs:
           # the Dwarf firmware pins its protocol submodule by its SSH URL
           git config --global url."https://github.com/".insteadOf git@github.com:
 
-      # the emulator and what it is built with, side by side as the Makefile and the package scripts expect them
+      # the emulator and everything it is built with (deps/), one commit deep: the submodules at the commits pinned
       - uses: actions/checkout@v4
         with:
           path: mod-hw-emulator
-          fetch-depth: 0
-      - uses: actions/checkout@v4
-        with:
-          repository: sejerpz/mod-dwarf-controller
-          ref: feature/mod-hw-emulator
-          path: mod-dwarf-controller
-          fetch-depth: 0
+          fetch-depth: 1
           submodules: recursive
-      - uses: actions/checkout@v4
-        with:
-          repository: sejerpz/mod-duox-controller
-          ref: master
-          path: mod-duox-controller
-          fetch-depth: 0
-          submodules: recursive
-      - uses: actions/checkout@v4
-        with:
-          repository: sejerpz/mod-host
-          ref: feature/mod-hw-emulator
-          path: mod-host
-      - uses: actions/checkout@v4
-        with:
-          repository: sejerpz/mod-system-control
-          ref: feature/hmi-widgets
-          path: mod-system-control
-          submodules: recursive
-      - uses: actions/checkout@v4
-        with:
-          repository: mod-audio/mod-desktop
-          ref: ${{ env.MOD_DESKTOP_REF }}
-          path: mod-desktop
-          fetch-depth: 0
-          submodules: recursive
-      # MOD Desktop is built with the mod-ui of mod-hw-emulator in place of its own: HMI widgets, the HMI line
-      # over TCP, hardware addressing and the Display dialog with a controller attached
-      - name: Take mod-ui out of MOD Desktop
-        run: rm -rf mod-desktop/src/mod-ui
-      - uses: actions/checkout@v4
-        with:
-          repository: sejerpz/mod-ui
-          ref: feature/mod-hw-emulator
-          path: mod-desktop/src/mod-ui
+      - name: Sources
+        run: git -C mod-hw-emulator submodule status --recursive
 
       - name: Set up dependencies
         if: runner.os == 'Linux'
-        working-directory: mod-desktop
+        working-directory: ${{ env.MD }}
         run: |
           ./src/PawPaw/.github/workflows/bootstrap-deps.sh ${{ matrix.target }}
           apt-get install -yqq libfreetype-dev libx11-dev libxcursor-dev libxext-dev libxrandr-dev libxrender-dev \
               p7zip-full python3 unzip wget xdg-user-dirs xvfb xz-utils zip
       - name: Set up dependencies (macOS)
         if: runner.os == 'macOS'
-        working-directory: mod-desktop
+        working-directory: ${{ env.MD }}
         run: |
           brew uninstall --ignore-dependencies --force azure-cli aws-sam-cli php || true
           ./src/PawPaw/.github/workflows/bootstrap-deps.sh ${{ matrix.target }}
           brew install p7zip wget
       - name: Patch MOD Desktop
-        working-directory: mod-desktop
+        working-directory: ${{ env.MD }}
         run: |
           ./utils/apply-patches.sh
           # FluidPlug's archive at the commit mod-plugin-builder pins is no longer on GitHub
@@ -201,7 +169,7 @@ jobs:
               echo "$sum  $f" | shasum -a 256 -c -
           done
       - name: Build dependencies
-        working-directory: mod-desktop
+        working-directory: ${{ env.MD }}
         run: |
           ./src/PawPaw/bootstrap-mod.sh ${{ matrix.target }} && ./src/PawPaw/.cleanup.sh ${{ matrix.target }}
       - name: Dependencies cached, run the workflow again
@@ -212,13 +180,13 @@ jobs:
       # a download that failed, or was answered with a page (removed), is tried again a little later, a few times
       - name: Build MOD Desktop
         if: steps.cache.outputs.cache-hit == 'true'
-        working-directory: mod-desktop
+        working-directory: ${{ env.MD }}
         shell: bash
         run: |
           set -o pipefail
           for attempt in 1 2 3 4; do
               make -k ${{ matrix.make }} -j$(getconf _NPROCESSORS_ONLN) 2>&1 | tee make.log && exit 0
-              bad=$(../mod-hw-emulator/scripts/ci-bad-downloads.sh ~/PawPawBuilds/downloads)
+              bad=$("$GITHUB_WORKSPACE"/mod-hw-emulator/scripts/ci-bad-downloads.sh ~/PawPawBuilds/downloads)
               if [ -n "$bad" ]; then
                   echo "::warning::not archives, downloaded again: $bad"
                   (cd ~/PawPawBuilds/downloads && rm -f $bad)
@@ -239,7 +207,7 @@ jobs:
         run: |
           # on macOS, where the emulator is the newest, a failed build shows all its errors at once
           [ "$RUNNER_OS" != macOS ] || export MAKEFLAGS=-k
-          bash mod-hw-emulator/scripts/${{ matrix.pack }} mod-desktop mod-host ${{ matrix.out }}
+          bash mod-hw-emulator/scripts/${{ matrix.pack }} $MD mod-hw-emulator/deps/mod-host ${{ matrix.out }}
           ls -la ${{ matrix.out }}
       # the emulator of the macOS package starts, with each firmware: a picture of each, kept with the run
       - name: Try the emulator (macOS)

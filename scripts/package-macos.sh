@@ -155,8 +155,8 @@ codesign --force -s - "$STAGE/mod-desktop"
 cp "$STAGE/mod-desktop" "$MACOS/mod-desktop"
 codesign --verify "$MACOS/mod-hw-emulator"
 
-DWARF=$(cd "$EMU" && cd "${FW_DWARF:-../mod-dwarf-controller}" && pwd)
-DUOX=$(cd "$EMU" && cd "${FW_DUOX:-../mod-duox-controller}" && pwd)
+DWARF=$(cd "$EMU" && cd "${FW_DWARF:-deps/mod-dwarf-controller}" && pwd)
+DUOX=$(cd "$EMU" && cd "${FW_DUOX:-deps/mod-duox-controller}" && pwd)
 rev() { git -C "$1" rev-parse HEAD 2> /dev/null || echo "${2:-unknown}"; }
 describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo unknown; }
 {
@@ -165,11 +165,11 @@ describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo u
     echo "Built from these sources; each is free software under its own license (GPL/AGPL: LICENSE*):"
     echo
     echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
-    echo "mod-desktop           https://github.com/mod-audio/mod-desktop         $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
+    echo "mod-desktop           https://github.com/sejerpz/mod-desktop           $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
     git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '$2 != "src/mod-ui" { printf "  %-40s %s\n", $2, $1 }'
-    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
-    echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces mod-desktop's)"
-    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/../mod-system-control")} (branch feature/hmi-widgets)"
+    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, the src/mod-ui of sejerpz/mod-desktop)"
+    echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces the src/mod-host of mod-desktop)"
+    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
     echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
     echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
     echo
