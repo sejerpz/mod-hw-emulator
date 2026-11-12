@@ -10,6 +10,10 @@
 # Without mod-host (default): MOD_DEV_HOST=1, no jackd, no plugin widgets.
 # With mod-host (scripts/run-mod-host.sh): MOD_DEV_HOST=0 and MOD_DEVICE_HOST_PORT=<its port>; server.py
 # turns the development environment on by itself, so MOD_DEV_HOST=0 must be set explicitly.
+#
+# The data are those debug-server.sh takes next to a mod-ui checkout beside the emulator, whatever mod-ui is
+# run (deps/mod-desktop/src/mod-ui too): MOD_DATA_DIR (default ../mod-home), MOD_USER_FILES_DIR (default
+# ../user-files), LV2_PATH (default ../plugins/lv2, as scripts/run-mod-host.sh).
 
 set -e
 
@@ -47,6 +51,10 @@ export MOD_DEV_HOST=${MOD_DEV_HOST:-1}
 export MOD_DEVICE_HOST_PORT=${MOD_DEVICE_HOST_PORT:-5555}
 export MOD_HMI_SERIAL_PORT=tcp://127.0.0.1:$PORT
 export MOD_HARDWARE_DESC_FILE=$EMU/devices/$DEVICE/mod-hardware-descriptor.json
+export MOD_DATA_DIR=${MOD_DATA_DIR:-$EMU/../mod-home/}
+export MOD_USER_FILES_DIR=${MOD_USER_FILES_DIR:-$EMU/../user-files/}
+export LV2_PATH=${LV2_PATH:-$EMU/../plugins/lv2/}
 
+# debug-server.sh with the data above
 cd "$UI"
-exec sh ./debug-server.sh
+exec python server.py
