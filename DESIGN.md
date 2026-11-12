@@ -284,7 +284,8 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
   emulator.
 - **Integer division by zero** returns 0 on the Cortex-M3 and traps on x86-64. The emulator completes the
   instruction the ARM way and logs it once: `screen_page_index()` divides by the number of available pages,
-  0 when `boot` arrives before `pa` — a latent firmware bug.
+  0 when `boot` arrives before `pa` or a pedalboard is cleared (`pcl`) — a latent firmware bug, guarded on
+  `feature/mod-hw-emulator`, still there in older firmwares.
 - **CPU.** The display task redraws the whole frame through GPIO in a `taskYIELD()` loop: explicit yields
   are paced (one per 10 ms per task, ended early by a context switch request) and fast timers run in
   batches. Idle load is about 6% of a core.
