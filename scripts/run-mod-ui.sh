@@ -20,18 +20,23 @@ set -e
 EMU=$(cd "$(dirname "$0")/.." && pwd)
 DEVICE=dwarf
 
+# options before or after the arguments
+ARGS=()
 while [ $# -gt 0 ]; do
     case "$1" in
-        --device) DEVICE=$2; shift ;;
+        --device) DEVICE=${2:?--device needs dwarf, duox or duo}; shift ;;
         --device=*) DEVICE=${1#--device=} ;;
         -*) echo "unknown option $1" >&2; exit 1 ;;
-        *) break ;;
+        *) ARGS+=("$1") ;;
     esac
     shift
 done
 
-UI=$(cd "${1:?usage: $0 [--device dwarf|duox|duo] MOD_UI_DIR [PORT]}" && pwd)
-PORT=${2:-9900}
+UI=$(cd "${ARGS[0]:?usage: $0 [--device dwarf|duox|duo] MOD_UI_DIR [PORT]}" && pwd)
+PORT=${ARGS[1]:-9900}
+case "$PORT" in
+    ''|*[!0-9]*) echo "PORT is a number, not '$PORT'" >&2; exit 1 ;;
+esac
 
 if [ ! -f "$EMU/devices/$DEVICE/mod-hardware-descriptor.json" ]; then
     echo "no device '$DEVICE': dwarf, duox or duo" >&2
