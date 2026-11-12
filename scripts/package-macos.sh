@@ -114,20 +114,15 @@ for q in Core Gui Widgets; do
 done
 otool -L "$MACOS/mod-hw-emulator" | grep -i qt
 
-# MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the device's one gives the rest
+# the device's descriptor with its drop-ins (the HMI widget areas); MOD Desktop's keeps what tells the desktop
+# apart (name, binaries)
 for d in $DEVICES; do
     cp -R "$EMU/devices/$d/skin" "$PKG/skins/$d"
     mkdir -p "$PKG/devices/$d"
-    cp "$EMU/devices/$d/mod-hardware-descriptor.json" "$PKG/devices/$d/"
-    python3 - "$RES/mod-hardware-descriptor.json" "$EMU/devices/$d/mod-hardware-descriptor.json" \
-              "$PKG/devices/$d/mod-desktop-descriptor.json" << 'EOF'
-import json, sys
-desktop, device = (json.load(open(p)) for p in sys.argv[1:3])
-for key in ('name', 'architecture', 'bin-compat'):
-    if key in desktop:
-        device[key] = desktop[key]
-json.dump(device, open(sys.argv[3], 'w'), indent=2)
-EOF
+    python3 "$EMU/scripts/merge-descriptor.py" "$EMU/devices/$d/mod-hardware-descriptor.json" \
+            "$PKG/devices/$d/mod-hardware-descriptor.json"
+    python3 "$EMU/scripts/merge-descriptor.py" "$EMU/devices/$d/mod-hardware-descriptor.json" \
+            "$PKG/devices/$d/mod-desktop-descriptor.json" "$RES/mod-hardware-descriptor.json"
 done
 cp "$RES/mod-hardware-descriptor.json" "$PKG/devices/mod-desktop.json"
 # mhe-desktop.sh writes the descriptor of the device here at each start: a link out of the sealed bundle

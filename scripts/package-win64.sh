@@ -120,7 +120,9 @@ done
 for d in $DEVICES; do
     cp -r "$EMU/devices/$d/skin" "$PKG/skins/$d"
     mkdir -p "$PKG/devices/$d"
-    cp "$EMU/devices/$d/mod-hardware-descriptor.json" "$PKG/devices/$d/"
+    # with its drop-ins (the HMI widget areas): mhe-desktop.ps1 writes MOD Desktop's descriptor from it
+    python3 "$EMU/scripts/merge-descriptor.py" "$EMU/devices/$d/mod-hardware-descriptor.json" \
+            "$PKG/devices/$d/mod-hardware-descriptor.json"
 done
 cp "$EMU/scripts/mhe-desktop.ps1" "$PKG/"
 sed 's/$/\r/' "$EMU/scripts/mhe-desktop.cmd" > "$PKG/mhe-desktop.cmd"

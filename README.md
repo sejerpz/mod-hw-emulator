@@ -95,8 +95,9 @@ Snapshot 2.
 With mod-ui as for the Dwarf (below), with the Duo X descriptor:
 `MOD_HARDWARE_DESC_FILE=../mod-hw-emulator/devices/duox/mod-hardware-descriptor.json`, or
 `scripts/run-mod-ui.sh --device duox ../mod-ui`. It is written from
-the firmware, not taken from the device, and has no HMI widgets: the Duo X firmware does not draw them (see
-"Device profile" in [DESIGN.md](DESIGN.md)). Not tried with mod-ui yet.
+the firmware, not taken from the device. Its HMI widget areas (`mod-hardware-descriptor.d/`) are those of the
+alabs-hmi-widgets specification, two displays with 15 areas each: mod-ui places widgets on them, but the Duo X
+firmware does not draw them yet (see "Device profile" in [DESIGN.md](DESIGN.md)).
 
 ### MOD Duo
 
@@ -246,7 +247,9 @@ Desktop otherwise hides for having no display. The device settings and Control C
 has nothing behind them. It is the `src/mod-ui` submodule of `deps/mod-desktop`, the fork
 [sejerpz/mod-desktop](https://github.com/sejerpz/mod-desktop) branch `feature/mod-hw-emulator` (mod-desktop `main`
 with that one change), so its `utils/` library is built with MOD Desktop from the same sources; `patches/mod-ui`
-is only for the package laid over an installed MOD Desktop.
+is only for the package laid over an installed MOD Desktop. The descriptor of each device goes in the package
+with its drop-ins merged in (`scripts/merge-descriptor.py`), as mod-ui would merge them on the device: the HMI
+widget areas come with it.
 
 ## On Linux, with MOD Desktop
 

@@ -81,8 +81,8 @@ if (Test-Path (Join-Path $portable 'mod-desktop.exe')) {
 }
 
 # MOD Desktop's descriptor keeps what tells the desktop apart (name, binaries); the device's one gives the rest
-$desktop = Get-Content -Raw $desktopDescriptor | ConvertFrom-Json
-$descriptor = Get-Content -Raw (Join-Path $here "devices\$Device\mod-hardware-descriptor.json") | ConvertFrom-Json
+$desktop = Get-Content -Raw -Encoding UTF8 $desktopDescriptor | ConvertFrom-Json
+$descriptor = Get-Content -Raw -Encoding UTF8 (Join-Path $here "devices\$Device\mod-hardware-descriptor.json") | ConvertFrom-Json
 foreach ($key in 'name', 'architecture', 'bin-compat') {
     if ($desktop.PSObject.Properties[$key]) {
         $descriptor | Add-Member -Force -NotePropertyName $key -NotePropertyValue $desktop.$key
