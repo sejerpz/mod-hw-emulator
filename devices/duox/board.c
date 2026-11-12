@@ -124,7 +124,8 @@ static const int g_led_pins[LEDS_COUNT][6] = { LED0_PINS, LED1_PINS, LED2_PINS, 
 
 static st7565p_chip *g_display[GLCD_COUNT];
 static int g_backlight_meter[GLCD_COUNT];
-static uint8_t g_frame[DISPLAY_H * ((DISPLAY_W + 7) / 8)];
+/* one frame per display: a brightness change alone sends the frame of that display again */
+static uint8_t g_frame[GLCD_COUNT][DISPLAY_H * ((DISPLAY_W + 7) / 8)];
 static uint8_t g_brightness[GLCD_COUNT];
 static int g_frame_sent[GLCD_COUNT];
 
@@ -153,7 +154,7 @@ static void display_refresh(void)
     {
         const uint16_t duty = emu_gpio_meter_take(g_backlight_meter[d]);
         const uint8_t brightness = (uint8_t)(duty >> 8);
-        const int changed = st7565p_chip_render(g_display[d], g_frame);
+        const int changed = st7565p_chip_render(g_display[d], g_frame[d]);
 
         if (changed || brightness != g_brightness[d] || ! g_frame_sent[d])
         {
@@ -161,7 +162,7 @@ static void display_refresh(void)
             g_frame_sent[d] = 1;
             if (g_emu_host && g_emu_host->display_frame)
                 g_emu_host->display_frame(g_emu_host->handle, d, DISPLAY_W, DISPLAY_H, MHE_PIXEL_MONO1,
-                                          g_frame, brightness);
+                                          g_frame[d], brightness);
         }
     }
 }
