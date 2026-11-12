@@ -157,8 +157,9 @@ from the firmware and from what mod-ui reads. Actuator ids are the firmware's hw
 subpages (`PAGES_COUNT`, `pa`), and only the boot data and names its protocol handles: master volume in
 `boot`, the pedalboard name (`pn`); no snapshot name, tuner input or reference (it registers none of
 those commands). The `/hmi/...` URIs follow the Dwarf ones: pedalboards addressed on a real Duo X may name
-other URIs. The HMI widgets are left out: the Duo X firmware has none, so neither the descriptor has the
-`hmi_widget_*` keys of the Dwarf (`mod-hardware-descriptor.d/`) nor mod-ui offers widget areas for it.
+other URIs. The HMI widget areas (`mod-hardware-descriptor.d/`) are the Dwarf ones twice, on one surface
+256 wide: x 0 to 127 is the left display, 128 to 255 the right one, and an area stays on one display
+(the firmware's `wip/dwarf-backport` refuses one that crosses).
 
 sys_host.c of mod-system-control is built for one device (`_MOD_DEVICE_DWARF`, `_MOD_DEVICE_DUOX`: pages,
 subpages, actuators of its page cache), and the hosts load any device. So it is built once per device

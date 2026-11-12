@@ -1,0 +1,25 @@
+{
+    "hmi_widget_areas": [
+        {"id": "left-col1", "name": "Left column 1", "rect": [2, 12, 40, 37], "cells": ["left-c1"]},
+        {"id": "left-col2", "name": "Left column 2", "rect": [44, 12, 40, 37], "cells": ["left-c2"]},
+        {"id": "left-col3", "name": "Left column 3", "rect": [86, 12, 40, 37], "cells": ["left-c3"]},
+        {"id": "left-col12", "name": "Left columns 1-2", "rect": [2, 12, 82, 37], "cells": ["left-c1", "left-c2"]},
+        {"id": "left-col23", "name": "Left columns 2-3", "rect": [44, 12, 82, 37], "cells": ["left-c2", "left-c3"]},
+        {"id": "left-col123", "name": "Left columns 1-3", "rect": [2, 12, 124, 37], "cells": ["left-c1", "left-c2", "left-c3"]},
+        {"id": "left-footB", "name": "Left footer B", "rect": [24, 54, 53, 10], "cells": ["left-footB"], "subpages": false},
+        {"id": "left-footC", "name": "Left footer C", "rect": [77, 54, 51, 10], "cells": ["left-footC"], "subpages": false},
+        {"id": "left-footBC", "name": "Left footers B-C", "rect": [24, 54, 104, 10], "cells": ["left-footB", "left-footC"], "subpages": false},
+        {"id": "left-fullscreen", "name": "Left full screen", "rect": [0, 0, 128, 64], "cells": ["left-top", "left-c1", "left-c2", "left-c3", "left-index", "left-footB", "left-footC"]},
+        {"id": "right-col1", "name": "Right column 1", "rect": [130, 12, 40, 37], "cells": ["right-c1"]},
+        {"id": "right-col2", "name": "Right column 2", "rect": [172, 12, 40, 37], "cells": ["right-c2"]},
+        {"id": "right-col3", "name": "Right column 3", "rect": [214, 12, 40, 37], "cells": ["right-c3"]},
+        {"id": "right-col12", "name": "Right columns 1-2", "rect": [130, 12, 82, 37], "cells": ["right-c1", "right-c2"]},
+        {"id": "right-col23", "name": "Right columns 2-3", "rect": [172, 12, 82, 37], "cells": ["right-c2", "right-c3"]},
+        {"id": "right-col123", "name": "Right columns 1-3", "rect": [130, 12, 124, 37], "cells": ["right-c1", "right-c2", "right-c3"]},
+        {"id": "right-footB", "name": "Right footer B", "rect": [152, 54, 53, 10], "cells": ["right-footB"], "subpages": false},
+        {"id": "right-footC", "name": "Right footer C", "rect": [205, 54, 51, 10], "cells": ["right-footC"], "subpages": false},
+        {"id": "right-footBC", "name": "Right footers B-C", "rect": [152, 54, 104, 10], "cells": ["right-footB", "right-footC"], "subpages": false},
+        {"id": "right-fullscreen", "name": "Right full screen", "rect": [128, 0, 128, 64], "cells": ["right-top", "right-c1", "right-c2", "right-c3", "right-index", "right-footB", "right-footC"]}
+    ],
+    "hmi_widget_pixel_format": "mono1"
+}
