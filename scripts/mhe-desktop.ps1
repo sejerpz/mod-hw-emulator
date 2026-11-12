@@ -1,6 +1,6 @@
-# mod-hw-emulator - runs MOD Desktop with an emulated controller, the Dwarf or the Duo X (Windows)
+# mod-hw-emulator - runs MOD Desktop with an emulated controller, the Dwarf, the Duo X or the Duo (Windows)
 #
-#   mhe-desktop.cmd [-Device dwarf|duox] [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh] [-SharedData]
+#   mhe-desktop.cmd [-Device dwarf|duox|duo] [-ModDesktop DIR] [-Overlay DIR] [-NoEmulator] [-Refresh] [-SharedData]
 #
 # In the standalone package (package-win64.sh --standalone) MOD Desktop is in mod-desktop\ next to this script,
 # with these files already in it: -ModDesktop, -Overlay and -Refresh do not apply, and its data is in data# (Documents\MOD Desktop with -SharedData, the folder of an installed MOD Desktop).
@@ -39,6 +39,8 @@ $hmiPort = 9900
 $state = Join-Path $here "mhe-state\$Device"
 $firmware = Join-Path $here "fw-$Device.dll"
 $sysPort = 9901
+# the port that tells the emulator is up: the Duo has no system line, mod-host goes without /sys_msgs
+$readyPort = if ($Device -eq 'duo') { $hmiPort } else { $sysPort }
 
 # the standalone package has its own MOD Desktop, the overlay already laid over it
 $portable = Join-Path $here 'mod-desktop'
@@ -105,8 +107,8 @@ function Test-Listening([int]$port) {
 
 # the emulator first: mod-host connects to it when it starts
 if (-not $NoEmulator) {
-    if (Test-Listening $sysPort) {
-        Write-Host "something is already on port ${sysPort}: an emulator running? (-NoEmulator to use it)"
+    if ((Test-Listening $hmiPort) -or (Test-Listening $sysPort)) {
+        Write-Host "something is already on port $hmiPort or ${sysPort}: an emulator running? (-NoEmulator to use it)"
         exit 1
     }
     Start-Process -FilePath (Join-Path $here 'mod-hw-emulator.exe') `
@@ -114,9 +116,9 @@ if (-not $NoEmulator) {
                   -WorkingDirectory $here
 }
 $deadline = (Get-Date).AddSeconds(15)
-while (-not (Test-Listening $sysPort)) {
+while (-not (Test-Listening $readyPort)) {
     if ((Get-Date) -gt $deadline) {
-        throw "the emulator is not listening on port $sysPort"
+        throw "the emulator is not listening on port $readyPort"
     }
     Start-Sleep -Milliseconds 250
 }

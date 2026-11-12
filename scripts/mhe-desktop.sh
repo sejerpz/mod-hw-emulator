@@ -1,7 +1,7 @@
 #!/bin/bash
-# mod-hw-emulator - runs MOD Desktop with an emulated controller, the Dwarf or the Duo X (Linux and macOS packages)
+# mod-hw-emulator - runs MOD Desktop with an emulated controller, the Dwarf, the Duo X or the Duo (Linux and macOS packages)
 #
-#   ./mhe-desktop.sh [--device dwarf|duox] [--no-emulator] [--shared-data]
+#   ./mhe-desktop.sh [--device dwarf|duox|duo] [--no-emulator] [--shared-data]
 #
 # The package (scripts/package-linux.sh, package-macos.sh) holds a MOD Desktop built from mod-desktop main with
 # mod-host, mod-ui's hmi.py and addressing dialog and the launcher of mod-hw-emulator in it, and the emulator. This
@@ -54,6 +54,10 @@ fi
 # the emulator's EEPROM and settings, one per device
 state="$here/mhe-state/$device"
 
+# the port that tells the emulator is up: the Duo has no system line, mod-host goes without /sys_msgs
+ready_port=$sys_port
+[ "$device" = duo ] && ready_port=$hmi_port
+
 # with a timeout where there is one: where nothing refuses a connection to a closed port (WSL's mirrored
 # network) it would hang; macOS has no timeout, and refuses at once
 listening() {
@@ -73,18 +77,18 @@ export MOD_SYS_SERIAL_PORT="tcp://127.0.0.1:$sys_port"
 export MOD_DEV_HMI=0
 
 if $emulator; then
-    if listening $sys_port; then
-        echo "something is already on port $sys_port: an emulator running? (--no-emulator to use it)" >&2
+    if listening $hmi_port || listening $sys_port; then
+        echo "something is already on port $hmi_port or $sys_port: an emulator running? (--no-emulator to use it)" >&2
         exit 1
     fi
     (cd "$here" && exec "$emulator_bin" --state "$state" --tcp webgui=$hmi_port "$firmware" > /dev/null 2>&1 &)
 fi
 for _ in $(seq 30); do
-    listening $sys_port && break
+    listening $ready_port && break
     sleep 0.5
 done
-if ! listening $sys_port; then
-    echo "the emulator is not listening on port $sys_port" >&2
+if ! listening $ready_port; then
+    echo "the emulator is not listening on port $ready_port" >&2
     exit 1
 fi
 
