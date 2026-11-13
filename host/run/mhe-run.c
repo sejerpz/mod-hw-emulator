@@ -136,6 +136,7 @@ static void sys_reply(void *ctx, const uint8_t *data, size_t size)
 static void console_reply(void *ctx, const uint8_t *data, size_t size)
 {
     (void)ctx;
+    printf("[cli<] %.*s\n", (int)strcspn((const char *)data, "\r\n") < (int)size ? (int)strcspn((const char *)data, "\r\n") : (int)size, (const char *)data);
     g_mod->serial_rx((uint8_t)g_cli_channel, data, size);
 }
 
