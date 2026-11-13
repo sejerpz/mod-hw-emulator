@@ -26,5 +26,5 @@
 [submodule "deps/mod-duo-controller"]
 	path = deps/mod-duo-controller
 	url = https://github.com/sejerpz/mod-duo-controller.git
-	branch = feature/mod-hw-emulator
+	branch = devel
 	shallow = true

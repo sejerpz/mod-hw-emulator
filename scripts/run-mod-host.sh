@@ -4,7 +4,7 @@
 #   scripts/run-mod-host.sh [PORT]
 #
 # mod-host opens /sys_msgs (plugin widgets, labels, leds) only as a JACK internal client, and only when built
-# with `make MOD_HMI_EMULATOR=1` (branch feature/mod-hw-emulator). Start the emulator first: it creates
+# with `make MOD_HMI_EMULATOR=1` (branch devel). Start the emulator first: it creates
 # /sys_msgs. PORT is mod-host's socket port (feedback on PORT+1), 5555 by default: mod-ui must use the same,
 # MOD_DEVICE_HOST_PORT. Pick another one when something else has 5555 (the Android emulator's adb, say; with
 # WSL mirrored networking the Windows ports count too).

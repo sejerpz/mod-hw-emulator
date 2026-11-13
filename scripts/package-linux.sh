@@ -5,16 +5,16 @@
 #   scripts/package-linux.sh MOD_DESKTOP MOD_HOST [OUT]
 #
 # MOD_DESKTOP is a mod-desktop checkout built for linux-x86_64 as mod-desktop's CI does it (ubuntu:22.04), with
-# the mod-ui of mod-hw-emulator in place of its own: sejerpz/mod-ui, branch feature/mod-hw-emulator (HMI widgets,
+# the mod-ui of mod-hw-emulator in place of its own: sejerpz/mod-ui, branch devel (HMI widgets,
 # the HMI line over TCP, hardware addressing and the Display dialog with a controller attached):
 #
-#   rm -rf src/mod-ui && git clone -b feature/mod-hw-emulator https://github.com/sejerpz/mod-ui.git src/mod-ui
+#   rm -rf src/mod-ui && git clone -b devel https://github.com/sejerpz/mod-ui.git src/mod-ui
 #   src/PawPaw/.github/workflows/bootstrap-deps.sh linux-x86_64
 #   utils/apply-patches.sh
 #   src/PawPaw/bootstrap-mod.sh linux-x86_64
 #   make
 #
-# MOD_HOST is a mod-host checkout on branch feature/mod-hw-emulator (sys_serial_tcp.h). OUT is the tarball,
+# MOD_HOST is a mod-host checkout on branch devel (sys_serial_tcp.h). OUT is the tarball,
 # mod-hw-emulator-desktop-linux-x86_64.tar.xz by default. The revisions of trees that are not git checkouts come
 # from MHE_REV, MOD_HOST_REV and MSC_REV (SOURCES.txt). Unpack it anywhere and run ./mhe-desktop.sh.
 
@@ -31,7 +31,7 @@ DEVICES="dwarf duox duo"
 
 # the mod-ui MOD Desktop was built with: the one of mod-hw-emulator has the HMI line over TCP
 if ! grep -q "tcp://" "$MOD_DESKTOP/src/mod-ui/mod/hmi.py"; then
-    echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui feature/mod-hw-emulator in src/mod-ui" >&2
+    echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui devel in src/mod-ui" >&2
     exit 1
 fi
 
@@ -104,12 +104,12 @@ describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo u
     echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
     echo "mod-desktop           https://github.com/sejerpz/mod-desktop           $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
     git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '$2 != "src/mod-ui" { printf "  %-40s %s\n", $2, $1 }'
-    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, the src/mod-ui of sejerpz/mod-desktop)"
-    echo "mod-host              https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces the src/mod-host of mod-desktop)"
-    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
-    echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
+    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch devel, the src/mod-ui of sejerpz/mod-desktop)"
+    echo "mod-host              https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch devel, replaces the src/mod-host of mod-desktop)"
+    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch devel)"
+    echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch devel)"
     echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
-    echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), fork of mod-audio/mod-duo-controller)"
+    echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), branch devel)"
     echo
     echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
     echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

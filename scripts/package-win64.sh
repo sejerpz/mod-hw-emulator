@@ -7,7 +7,7 @@
 # --standalone puts the whole MOD Desktop of MOD_DESKTOP/build in the package, with the overlay already laid over it
 # (mod-desktop/ in place of mod-desktop-overlay/), for where there is no MOD Desktop release to install: the zip
 # runs as it is, keeps its data in data/, and SOURCES.txt says what it was built from. MOD Desktop is then built
-# with the mod-ui of mod-hw-emulator in src/mod-ui (sejerpz/mod-ui, branch feature/mod-hw-emulator: HMI widgets,
+# with the mod-ui of mod-hw-emulator in src/mod-ui (sejerpz/mod-ui, branch devel: HMI widgets,
 # the HMI line over TCP, hardware addressing and the Display dialog with a controller attached), not patched. The
 # revisions of trees that are not git checkouts come from MHE_REV, MOD_HOST_REV, MSC_REV and MOD_UI_REV.
 #
@@ -19,7 +19,7 @@
 #   src/PawPaw/bootstrap-mod.sh win64
 #
 # so mod-host links the same jack and lilv as the MOD Desktop it goes in. MOD_HOST is a mod-host checkout on
-# branch feature/mod-hw-emulator (sys_serial_tcp.h); mod-ui's files are the ones of MOD_DESKTOP with
+# branch devel (sys_serial_tcp.h); mod-ui's files are the ones of MOD_DESKTOP with
 # patches/mod-ui/*.patch. OUT is the zip, mod-hw-emulator-win64.zip by default.
 #
 # mod-desktop-overlay/ in the package holds the files at their place in the installation, and base-sha256.txt
@@ -56,10 +56,10 @@ $RUN make -C "$STAGE/mod-host" MOD_DESKTOP=1 MOD_HMI_EMULATOR=1 SKIP_READLINE=1 
 cp "$STAGE/mod-host/mod-host.so" "$OVL/jack/mod-host.dll"
 
 if $STANDALONE; then
-    # MOD Desktop is built with the mod-ui of mod-hw-emulator (sejerpz/mod-ui feature/mod-hw-emulator), which
+    # MOD Desktop is built with the mod-ui of mod-hw-emulator (sejerpz/mod-ui devel), which
     # has the HMI line over TCP
     if ! grep -q "tcp://" "$MOD_DESKTOP/src/mod-ui/mod/hmi.py"; then
-        echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui feature/mod-hw-emulator in src/mod-ui" >&2
+        echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui devel in src/mod-ui" >&2
         exit 1
     fi
 else
@@ -153,12 +153,12 @@ if $STANDALONE; then
         echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
         echo "mod-desktop           https://github.com/sejerpz/mod-desktop           $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
         git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '$2 != "src/mod-ui" { printf "  %-40s %s\n", $2, $1 }'
-        echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, the src/mod-ui of sejerpz/mod-desktop)"
-        echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces the src/mod-host of mod-desktop)"
-        echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
-        echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
+        echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch devel, the src/mod-ui of sejerpz/mod-desktop)"
+        echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch devel, replaces the src/mod-host of mod-desktop)"
+        echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch devel)"
+        echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch devel)"
         echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
-        echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), fork of mod-audio/mod-duo-controller)"
+        echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), branch devel)"
         echo
         echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
         echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

@@ -17,7 +17,7 @@ make                           # build/fw-dwarf.so (.dll/.dylib) and build/mhe-r
 
 The firmware is built from `deps/mod-dwarf-controller`, a checkout of
 [sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) on branch
-`feature/mod-hw-emulator` (`feature/hmi-widgets` plus fixes found with the emulator, and its protocol
+`devel` (`feature/hmi-widgets` plus fixes found with the emulator, and its protocol
 submodule on the widgets and ui-config branches merged); `make FW_DWARF=path` for another checkout. Its
 protocol submodule names its URL over SSH: without an SSH key for GitHub,
 `git config --global url."https://github.com/".insteadOf git@github.com:` first.
@@ -29,12 +29,12 @@ each, on the branch it follows:
 
 | Submodule | Repository, branch | For |
 |---|---|---|
-| `deps/mod-dwarf-controller` | [sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) `feature/mod-hw-emulator` | the Dwarf firmware (`FW_DWARF`) |
+| `deps/mod-dwarf-controller` | [sejerpz/mod-dwarf-controller](https://github.com/sejerpz/mod-dwarf-controller) `devel` | the Dwarf firmware (`FW_DWARF`) |
 | `deps/mod-duox-controller` | [sejerpz/mod-duox-controller](https://github.com/sejerpz/mod-duox-controller) `devel` | the Duo X firmware (`FW_DUOX`), with the HMI widgets |
-| `deps/mod-duo-controller` | [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) `feature/mod-hw-emulator` | the Duo firmware (`FW_DUO`) |
-| `deps/mod-system-control` | [sejerpz/mod-system-control](https://github.com/sejerpz/mod-system-control) `feature/hmi-widgets` | `sys_host.c` in the hosts (`MSC`) |
-| `deps/mod-host` | [sejerpz/mod-host](https://github.com/sejerpz/mod-host) `feature/mod-hw-emulator` | mod-host of the packages, `scripts/run-mod-host.sh` (`MOD_HOST`) |
-| `deps/mod-desktop` | [sejerpz/mod-desktop](https://github.com/sejerpz/mod-desktop) `feature/mod-hw-emulator` | MOD Desktop of the packages, with [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) `feature/mod-hw-emulator` as its `src/mod-ui` |
+| `deps/mod-duo-controller` | [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) `devel` | the Duo firmware (`FW_DUO`) |
+| `deps/mod-system-control` | [sejerpz/mod-system-control](https://github.com/sejerpz/mod-system-control) `devel` | `sys_host.c` in the hosts (`MSC`) |
+| `deps/mod-host` | [sejerpz/mod-host](https://github.com/sejerpz/mod-host) `devel` | mod-host of the packages, `scripts/run-mod-host.sh` (`MOD_HOST`) |
+| `deps/mod-desktop` | [sejerpz/mod-desktop](https://github.com/sejerpz/mod-desktop) `feature/mod-hw-emulator` | MOD Desktop of the packages, with [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) `devel` as its `src/mod-ui` |
 
 Each commit of mod-hw-emulator pins the commit of each one, and the packages are built from those: a tag
 builds the same sources again. `git clone --recursive` takes them all, MOD Desktop's many submodules
@@ -87,7 +87,7 @@ they are. `FW_REF` exports that commit with `git archive` to `build/src/` with i
 the commit it pins (taken from the submodule clone in the checkout): the checkout itself is not touched.
 The aLabs tags (`alabs10` and later, `stls16`…) build as they are; mod-audio publishes no tags of the
 controller, its `master` builds too (`FW_REF=master`, named after the commit hash). Firmwares without the
-fixes of `feature/mod-hw-emulator` can crash the emulator on bugs the device does not notice: see
+fixes of `devel` can crash the emulator on bugs the device does not notice: see
 "What the spike taught" in [DESIGN.md](DESIGN.md).
 
 The module tells which sources it was built from (describe, full commit, date): `mhe-run` prints it at
@@ -127,8 +127,8 @@ build/mod-hw-emulator build/fw-duo.so
 ```
 
 The firmware is [sejerpz/mod-duo-controller](https://github.com/sejerpz/mod-duo-controller) branch
-`feature/mod-hw-emulator` (`deps/mod-duo-controller`, `make FW_DUO=path` for another checkout): mod-audio's
-`master` with a fix found with the emulator. The Duo is the older controller, an LPC1759, with two displays, two
+`devel` (`deps/mod-duo-controller`, `make FW_DUO=path` for another checkout), with a fix found with the
+emulator. The Duo is the older controller, an LPC1759, with two displays, two
 knobs (`Knob 1/2`, they push too) and two footswitches with their leds (`Footswitch 1/2`); Q/A W/S turn the
 knobs, 1 2 push them, Z X are the footswitches. It talks to mod-ui with the protocol of its time: `is` with the
 pedalboards of the bank, `a` for a control, `boot` with the display brightness; no mod-system-control line,
@@ -160,10 +160,10 @@ The emulator plays the parts of the device around the controller:
 build/mhe-run --tcp webgui=9900 build/fw-dwarf.so
 ```
 
-mod-ui needs a `tcp://` HMI port: branch `feature/mod-hw-emulator` of
-[sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) (`feature/hmi-widgets` with the HMI line over TCP, and
-under MOD Desktop the hardware addressing and the Display dialog when a controller is attached; kept rebased on
-`feature/hmi-widgets`), that is `deps/mod-desktop/src/mod-ui` (see Sources above; rebuild its `utils/` when
+mod-ui needs a `tcp://` HMI port: branch `devel` of
+[sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) (the HMI widgets with the HMI line over TCP, and under MOD
+Desktop the hardware addressing and the Display dialog when a controller is attached: `feature/hmi-widgets` and
+`feature/mod-hw-emulator` merged), that is `deps/mod-desktop/src/mod-ui` (see Sources above; rebuild its `utils/` when
 it moves). Then:
 
 ```sh
@@ -185,9 +185,9 @@ MOD_HARDWARE_DESC_FILE=../../../../devices/dwarf/mod-hardware-descriptor.json ./
 
 On the device mod-host hands the widget bitmaps to mod-system-control through the `/sys_msgs` shared
 memory. The emulator builds mod-system-control's `sys_host.c` from `deps/mod-system-control` (branch
-`feature/hmi-widgets`) and creates `/sys_msgs` itself. mod-host opens it only as a JACK internal client, as
+`devel`) and creates `/sys_msgs` itself. mod-host opens it only as a JACK internal client, as
 on the device and in mod-desktop, and only when built with `make MOD_HMI_EMULATOR=1` (`deps/mod-host`,
-branch `feature/mod-hw-emulator`). With `MOD_SYS_SERIAL_PORT=tcp://127.0.0.1:9901` in the environment of both,
+branch `devel`). With `MOD_SYS_SERIAL_PORT=tcp://127.0.0.1:9901` in the environment of both,
 the emulator listens there and mod-host connects, in place of the shared memory; on Windows it is the only way
 and the default. mod-host is built in its submodule, with its dependencies (Debian/Ubuntu:
 `libjack-jackd2-dev liblilv-dev libreadline-dev libfftw3-dev`, and `jackd2` to run it):
@@ -273,8 +273,8 @@ data (pedalboards, user files, its log) in `data\` next to it rather than in `Do
 is not an official MOD Audio build (the Tone3000 integration has no client id).
 
 The standalone packages (Windows, Linux, macOS) are built with the mod-ui of mod-hw-emulator in place of
-mod-desktop's own: [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) branch `feature/mod-hw-emulator`, that
-is `feature/hmi-widgets` (the HMI widgets, on the 1.15 line of mod-ui) with the HMI line over TCP and two
+mod-desktop's own: [sejerpz/mod-ui](https://github.com/sejerpz/mod-ui) branch `devel`, with
+`feature/hmi-widgets` (the HMI widgets) and `feature/mod-hw-emulator` merged: the HMI line over TCP and two
 changes for MOD Desktop with a controller attached (a hardware descriptor with actuators): the Device addressing
 tab and the snapshots' "assign all" stay, and so does the **Display** dialog of the HMI widgets, which MOD
 Desktop otherwise hides for having no display. The device settings and Control Chain stay hidden: MOD Desktop
@@ -333,7 +333,7 @@ and caches them: run it again for the packages.
 | `host/` | Qt UI (`gui/`), headless runner (`run/`), mod-host stand-in (`tools/`), shared host code (`common/`: console, system-control, TCP lines) |
 | `deps/` | the submodules the emulator and the packages are built with (see Sources above) |
 | `scripts/` | launchers for mod-host and mod-ui, the package scripts, build adaptations of the firmware sources |
-| `patches/` | mod-desktop's launcher with the Open Emulator button and the data folder of the package; the mod-ui changes laid over an installed MOD Desktop (the standalone packages take them from mod-ui branch `feature/mod-hw-emulator` instead): the TCP HMI line, hardware addressing when the descriptor has actuators |
+| `patches/` | mod-desktop's launcher with the Open Emulator button and the data folder of the package; the mod-ui changes laid over an installed MOD Desktop (the standalone packages take them from mod-ui branch `devel` instead): the TCP HMI line, hardware addressing when the descriptor has actuators |
 
 ## License
 

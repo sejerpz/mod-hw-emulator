@@ -103,7 +103,7 @@ the checkout before compiling: it names the module (`build/fw-dwarf-<describe>.s
 commit, from the submodule clone in the checkout (the aLabs pins are not all published). A tag named in
 `FW_REF` names the build even when another tag sits on the same commit.
 
-Checked: `alabs10`, `alabs15`, `stls18`, `feature/mod-hw-emulator` and mod-audio's `master` build with the
+Checked: `alabs10`, `alabs15`, `stls18`, `devel` and mod-audio's `master` build with the
 same adaptations and boot. `master` has no `HardFault_Analisys`: the main.c adaptation cuts from
 `HardFault_Handler` there. mod-audio does not tag the controller (its releases are tagged in the OS image),
 so an upstream build is named after its commit hash.
@@ -192,7 +192,7 @@ footswitch bank functions, `boot` with brightness, quick bypass, tuner mute and 
 mod-ui are answered "not found" and ignored. `devices/duo/mod-hardware-descriptor.json` is written from the
 firmware: four actuators (hw_id 0-1 the knobs, 2-3 the footswitches), bank navigation, `hmi_set_index`, no
 addressing pages, no EEPROM. Firmware bug found: `bank_config_footer()` reads the footswitch pedalboard names
-before mod-ui has sent any (`bc` comes before `is`), a NULL read; fixed on the fork's `feature/mod-hw-emulator`.
+before mod-ui has sent any (`bc` comes before `is`), a NULL read; fixed on the fork's `devel`.
 
 Checked: boot logo, login on the console line, mod-ui (fake host) end to end with `pcl`, `bc`, `is`, `boot`;
 a control on a knob and a footswitch headless; the user interface with the Duo skin.
@@ -250,13 +250,13 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
 1. **Done** — spike: the Dwarf firmware boots headless, the display is dumped to an image, the controller
    answers on its serial channels, inputs reach it.
 2. **Written, not built yet** — Qt UI with the simple layout; encoders, buttons, footswitches, LEDs.
-3. **Done** — TCP channels; mod-ui branch `feature/mod-hw-emulator` (`tcp://` HMI port): mod-ui run
+3. **Done** — TCP channels; mod-ui branch `devel` (`tcp://` HMI port): mod-ui run
    with `debug-server.sh` and `MOD_DEV_HOST=1` goes through its whole HMI initialization down to `boot`,
    and the controller shows its pedalboard.
 4. **Done** — hmi-widgets end to end: mod-ui (Display dialog) → mod-host → plugin `hmi-widget-draw` →
    `/sys_msgs` → mod-system-control's own `sys_host.c` built into the emulator (page cache, resends,
    bitmaps in bands) → firmware → widget areas on the emulated display. mod-host branch
-   `feature/mod-hw-emulator` builds with `MOD_HMI_EMULATOR=1` (HMI control without the device audio
+   `devel` builds with `MOD_HMI_EMULATOR=1` (HMI control without the device audio
    processing) and runs as a JACK internal client, the only mode where it opens `/sys_msgs`.
 5. **Done on Windows** — `/sys_msgs` over TCP; the emulator built with MinGW and the Qt of PawPaw runs natively;
    `mhe-desktop.cmd` over MOD Desktop built from mod-desktop main (the 0.14 release): mod-ui on the HMI line
@@ -275,7 +275,7 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
   the old thread parks at its next preemption point, `vTaskSuspendAll()` included (`portSOFTWARE_BARRIER`).
 - **NULL reads and double frees** go unnoticed on the LPC1778, where address 0 is readable flash and the
   FreeRTOS heap does not check frees, and crash on a PC. Latent firmware bugs found this way, fixed on the
-  firmware branch `feature/mod-hw-emulator`: `CM_set_foot_led(NULL)` after `pcl`, `cb_menu_item_changed()`
+  firmware branch `devel`: `CM_set_foot_led(NULL)` after `pcl`, `cb_menu_item_changed()`
   reading past the arguments of `c`, `data_free_banks_list()` freeing the flags twice (bank list in the
   navigation mode), and `foot_control_rm()` reading an empty footswitch (a pedalboard loaded from the
   navigation mode). The emulator reports any invalid access in the firmware with the firmware describe and
@@ -285,7 +285,7 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
 - **Integer division by zero** returns 0 on the Cortex-M3 and traps on x86-64. The emulator completes the
   instruction the ARM way and logs it once: `screen_page_index()` divides by the number of available pages,
   0 when `boot` arrives before `pa` or a pedalboard is cleared (`pcl`) — a latent firmware bug, guarded on
-  `feature/mod-hw-emulator`, still there in older firmwares.
+  `devel`, still there in older firmwares.
 - **CPU.** The display task redraws the whole frame through GPIO in a `taskYIELD()` loop: explicit yields
   are paced (one per 10 ms per task, ended early by a context switch request) and fast timers run in
   batches. Idle load is about 6% of a core.

@@ -6,15 +6,15 @@
 #   scripts/package-macos.sh MOD_DESKTOP MOD_HOST [OUT]
 #
 # MOD_DESKTOP is a mod-desktop checkout built for macos-universal-10.15 on macOS as mod-desktop's CI does it, with
-# the mod-ui of mod-hw-emulator in place of its own (sejerpz/mod-ui, branch feature/mod-hw-emulator):
+# the mod-ui of mod-hw-emulator in place of its own (sejerpz/mod-ui, branch devel):
 #
-#   rm -rf src/mod-ui && git clone -b feature/mod-hw-emulator https://github.com/sejerpz/mod-ui.git src/mod-ui
+#   rm -rf src/mod-ui && git clone -b devel https://github.com/sejerpz/mod-ui.git src/mod-ui
 #   src/PawPaw/.github/workflows/bootstrap-deps.sh macos-universal-10.15
 #   utils/apply-patches.sh
 #   src/PawPaw/bootstrap-mod.sh macos-universal-10.15
 #   make PAWPAW_TARGET=macos-universal-10.15
 #
-# MOD_HOST is a mod-host checkout on branch feature/mod-hw-emulator. OUT is the zip,
+# MOD_HOST is a mod-host checkout on branch devel. OUT is the zip,
 # mod-hw-emulator-desktop-macos.zip by default. Unpack it anywhere and run ./mhe-desktop.sh.
 
 set -e
@@ -33,7 +33,7 @@ MIN_MACOS=10.15
 
 # the mod-ui MOD Desktop was built with: the one of mod-hw-emulator has the HMI line over TCP
 if ! grep -q "tcp://" "$MOD_DESKTOP/src/mod-ui/mod/hmi.py"; then
-    echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui feature/mod-hw-emulator in src/mod-ui" >&2
+    echo "$MOD_DESKTOP is built with its own mod-ui: put sejerpz/mod-ui devel in src/mod-ui" >&2
     exit 1
 fi
 
@@ -163,12 +163,12 @@ describe() { git -C "$1" describe --tags --always --dirty 2> /dev/null || echo u
     echo "mod-hw-emulator       https://github.com/sejerpz/mod-hw-emulator      $(rev "$EMU" "$MHE_REV")"
     echo "mod-desktop           https://github.com/sejerpz/mod-desktop           $(rev "$MOD_DESKTOP") ($(describe "$MOD_DESKTOP"), VERSION $(cat "$MOD_DESKTOP/VERSION"))"
     git -C "$MOD_DESKTOP" submodule status --recursive 2> /dev/null | awk '$2 != "src/mod-ui" { printf "  %-40s %s\n", $2, $1 }'
-    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch feature/mod-hw-emulator, the src/mod-ui of sejerpz/mod-desktop)"
-    echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch feature/mod-hw-emulator, replaces the src/mod-host of mod-desktop)"
-    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch feature/hmi-widgets)"
-    echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch feature/mod-hw-emulator)"
+    echo "mod-ui                https://github.com/sejerpz/mod-ui                $(rev "$MOD_DESKTOP/src/mod-ui" "$MOD_UI_REV") (branch devel, the src/mod-ui of sejerpz/mod-desktop)"
+    echo "mod-host             https://github.com/sejerpz/mod-host              $(rev "$MOD_HOST" "$MOD_HOST_REV") (branch devel, replaces the src/mod-host of mod-desktop)"
+    echo "mod-system-control    https://github.com/sejerpz/mod-system-control    ${MSC_REV:-$(rev "$EMU/deps/mod-system-control")} (branch devel)"
+    echo "Dwarf firmware        https://github.com/sejerpz/mod-dwarf-controller   $(rev "$DWARF") ($(describe "$DWARF"), branch devel)"
     echo "Duo X firmware        https://github.com/sejerpz/mod-duox-controller   $(rev "$DUOX") ($(describe "$DUOX"), fork of mod-audio/mod-duox-controller)"
-    echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), fork of mod-audio/mod-duo-controller)"
+    echo "Duo firmware          https://github.com/sejerpz/mod-duo-controller    $(rev "$DUO") ($(describe "$DUO"), branch devel)"
     echo
     echo "with patches/mod-desktop of mod-hw-emulator applied to the launcher."
     echo "Not an official MOD Audio build: the Tone3000 integration has no client id and does not work."

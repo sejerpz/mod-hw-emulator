@@ -5,7 +5,7 @@
 #
 # Start the emulator first: build/mhe-run --tcp webgui=PORT build/fw-<device>.so (PORT 9900 by default).
 # The device (dwarf by default) picks the hardware descriptor mod-ui reads, devices/<device>/.
-# mod-ui needs a tcp:// HMI port: branch feature/mod-hw-emulator, or patches/mod-ui/0001-hmi-tcp-transport.patch.
+# mod-ui needs a tcp:// HMI port: branch devel, or patches/mod-ui/0001-hmi-tcp-transport.patch.
 #
 # Without mod-host (default): MOD_DEV_HOST=1, no jackd, no plugin widgets.
 # With mod-host (scripts/run-mod-host.sh): MOD_DEV_HOST=0 and MOD_DEVICE_HOST_PORT=<its port>; server.py
@@ -44,7 +44,7 @@ if [ ! -f "$EMU/devices/$DEVICE/mod-hardware-descriptor.json" ]; then
 fi
 
 if ! grep -q "class SocketSerial" "$UI/mod/hmi.py"; then
-    echo "mod-ui has no tcp:// HMI port: use its feature/mod-hw-emulator branch or apply" >&2
+    echo "mod-ui has no tcp:// HMI port: use its devel branch or apply" >&2
     echo "  $EMU/patches/mod-ui/0001-hmi-tcp-transport.patch" >&2
     exit 1
 fi
