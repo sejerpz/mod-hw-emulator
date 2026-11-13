@@ -5,7 +5,7 @@
  * user hmi to know the system is up, and from then on runs shell commands there (systemctl, wifi...). Until
  * it has logged in it ignores the user's inputs.
  * This console plays the boot messages, answers the login, then every command line with an empty output.
- * Commands known to need an answer can be added to g_answers.
+ * Commands known to need an answer can be added to g_answers; wifi-ap (alabs-mod-wifi) keeps its own state.
  */
 
 #include "console.h"
@@ -37,6 +37,10 @@ struct mhe_console {
     pthread_cond_t out_cond;
     char out[MAX_OUT][MAX_LINE + 64];
     int out_head, out_count;
+
+    /* wifi-ap: the access point, switched after WIFI_AP_SWITCH_MS as with the -b option */
+    int wifi_ap_on, wifi_ap_switching;
+    struct timespec wifi_ap_since;
 };
 
 /* command prefix -> output line */
@@ -51,6 +55,38 @@ static const struct { const char *prefix; const char *output; } g_answers[] = {
  * back while it is still sending would be read in the previous state and dropped. Mutex held.
  */
 #define ANSWER_DELAY_MS 20
+
+#define WIFI_AP_SWITCH_MS 2000
+
+/* "wifi-ap status|on -b|off -b": a client connected to a network, an adapter with access point support */
+static const char *wifi_ap(mhe_console *c, const char *args)
+{
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    if (c->wifi_ap_switching)
+    {
+        long ms = (now.tv_sec - c->wifi_ap_since.tv_sec) * 1000 + (now.tv_nsec - c->wifi_ap_since.tv_nsec) / 1000000;
+        if (ms >= WIFI_AP_SWITCH_MS)
+        {
+            c->wifi_ap_on = ! c->wifi_ap_on;
+            c->wifi_ap_switching = 0;
+        }
+    }
+
+    if (! strncmp(args, "on", 2) || ! strncmp(args, "off", 3))
+    {
+        if (c->wifi_ap_switching || c->wifi_ap_on == (args[1] == 'n'))
+            return "error busy";
+        c->wifi_ap_switching = 1;
+        c->wifi_ap_since = now;
+        return c->wifi_ap_on ? "stopping" : "starting";
+    }
+
+    if (c->wifi_ap_switching)
+        return c->wifi_ap_on ? "stopping" : "starting";
+    return c->wifi_ap_on ? "on 192.168.60.1 modduox" : "off 192.168.1.42 ap";
+}
 
 static void say(mhe_console *c, const char *text)
 {
@@ -112,7 +148,14 @@ static void handle_line(mhe_console *c, const char *line)
 
     default:
     {
+        /* the controller ends its commands with \r\n: the empty line after one runs nothing, and with the empty
+           prompt it sets the shell prints nothing for it. An answer here would be read as the next command's */
+        if (! *line)
+            break;
+
         const char *output = "";
+        if (! strncmp(line, "wifi-ap ", 8))
+            output = wifi_ap(c, line + 8);
         for (size_t i = 0; i < sizeof(g_answers) / sizeof(g_answers[0]); ++i)
             if (! strncmp(line, g_answers[i].prefix, strlen(g_answers[i].prefix)))
                 output = g_answers[i].output;
