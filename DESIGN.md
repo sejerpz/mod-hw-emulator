@@ -226,24 +226,19 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
   semaphores shared between processes.
 - **mod-system-control** is not needed: the emulator bridges `sys_msgs` to the firmware system serial and
   answers the system commands of the controller (gain, settings, Wi-Fi…) with emulated values.
-- **Delivery without rebuilding mod-desktop**: mod-host is a single JACK internal client
-  (`jack/mod-host.(dll|so)`), mod-ui's `mod` package is a plain folder next to the frozen executable, and the
-  launcher passes its environment to jackd and mod-ui. `mhe-desktop` (Windows: `scripts/mhe-desktop.ps1`)
-  keeps a copy of the installation (the user data is in the user's folders, shared), lays mod-host, `hmi.py`,
-  the addressing dialog (MOD Desktop locks its Device tab and shows a card for the hardware; with actuators in the
-  descriptor it stays open), the launcher with an Open Emulator button (shown only with `MOD_HW_EMULATOR`, the
-  command line of the emulator) and a descriptor (MOD Desktop's name and binaries, the Dwarf actuators) over it, starts the emulator and
-  then the copy. The files are built for one mod-desktop release (`scripts/package-win64.sh`, in mod-desktop's
-  CI container with its PawPaw), so mod-host links the jack and lilv it is loaded with; mod-ui stays the
-  release's own but for the files `patches/mod-ui` changes, whose originals are checked by hash.
-- **Standalone on Windows**: with no Windows release of MOD Desktop 0.14, the package can instead hold a whole
-  MOD Desktop built from `main` with those files laid over it at build time (`package-win64.sh --standalone`).
-  The launcher keeps a `MOD_DATA_DIR` given to it (`patches/mod-desktop/0002`), so the zip keeps its data next
-  to it and never mixes with an installed MOD Desktop; the descriptor is still written at each start, from
-  MOD Desktop's own one kept in `devices\mod-desktop.json`, for the device chosen.
-- **Standalone on Linux**: the same package for Linux (`package-linux.sh`, `mhe-desktop.sh`), MOD Desktop
-  built for linux-x86_64 in its CI container. There too both sides of `/sys_msgs` use TCP
-  (`MOD_SYS_SERIAL_PORT`), so it needs no shared memory between the emulator and jackd.
+- **Delivery: alabs-mod-desktop**. The packages with MOD Desktop are built by the fork sejerpz/mod-desktop
+  (branch `devel`, `utils/alabs/`), which has this repository as a submodule (`src/mod-hw-emulator`) next to
+  the forks of mod-host (built with `MOD_HMI_EMULATOR=1`) and mod-ui (`devel`: HMI widgets, the HMI line over
+  TCP, the Device addressing tab and the Display dialog with a controller attached), and carries the launcher
+  changes itself: an Open Emulator button (shown only with `MOD_HW_EMULATOR`, the command line of the emulator)
+  and a `MOD_DATA_DIR` given to it kept, so a package keeps its data next to it and never mixes with an
+  installed MOD Desktop. `mhe-desktop` writes MOD Desktop's descriptor for the device at each start (MOD
+  Desktop's name and binaries, the device's actuators and widget areas), starts the emulator and then MOD
+  Desktop. On every platform both sides of `/sys_msgs` use TCP (`MOD_SYS_SERIAL_PORT`), so no shared memory is
+  needed between the emulator and jackd. mod-hw-emulator itself stays light: the firmwares and
+  mod-system-control as submodules, mod-ui and mod-host as checkouts of their own whose paths the scripts take.
+  An earlier version laid the changed files over an installed MOD Desktop (a copy of it, patched mod-ui files
+  checked by hash): dropped for the portable packages.
 
 ## Milestones
 
@@ -258,10 +253,9 @@ a control on a knob and a footswitch headless; the user interface with the Duo s
    bitmaps in bands) → firmware → widget areas on the emulated display. mod-host branch
    `devel` builds with `MOD_HMI_EMULATOR=1` (HMI control without the device audio
    processing) and runs as a JACK internal client, the only mode where it opens `/sys_msgs`.
-5. **Done on Windows** — `/sys_msgs` over TCP; the emulator built with MinGW and the Qt of PawPaw runs natively;
-   `mhe-desktop.cmd` over MOD Desktop built from mod-desktop main (the 0.14 release): mod-ui on the HMI line
-   (9900), mod-host on `/sys_msgs` (9901), the pedalboard on the emulated display. Plugin widgets there: not
-   tried (MOD Desktop's mod-ui has no Display dialog). Linux overlay: to do.
+5. **Done** — `/sys_msgs` over TCP; the emulator built with MinGW and the Qt of PawPaw runs natively on
+   Windows; alabs-mod-desktop for Windows, Linux and macOS: mod-ui on the HMI line (9900), mod-host on
+   `/sys_msgs` (9901), the pedalboard on the emulated display.
 6. **Done** — Skin layout, Dwarf, Duo X and Duo panel pictures and profiles (the Duo X without mod-ui yet; the
    Duo with mod-ui, on the LPC17xx family).
 

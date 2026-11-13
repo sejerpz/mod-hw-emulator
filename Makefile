@@ -37,7 +37,7 @@ SO_EXT   = .so
 HOST_LIBS = -ldl
 endif
 
-# ARCH_FLAGS: for every compile and link, such as -arch arm64 -mmacosx-version-min=10.15 (scripts/package-macos.sh)
+# ARCH_FLAGS: for every compile and link, such as -arch arm64 -mmacosx-version-min=10.15 (the macOS package of alabs-mod-desktop)
 ARCH_FLAGS ?=
 COMMON_CFLAGS = -D_GNU_SOURCE -std=gnu11 -O2 -g -pthread -fPIC -Wall -MMD -MP $(ARCH_FLAGS)
 MODULE_LDFLAGS = -shared -pthread $(ARCH_FLAGS)
@@ -261,7 +261,7 @@ clean:
 # ---------------------------------------------------------------------------------------------------------------
 # tools: mhe-fake-host plays mod-host on /sys_msgs (needs a mod-host checkout for its sys_host.h)
 
-MOD_HOST ?= deps/mod-host
+MOD_HOST ?= ../mod-host
 
 tools: $(BUILD)/mhe-fake-host
 

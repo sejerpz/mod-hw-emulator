@@ -8,20 +8,10 @@
 	url = https://github.com/sejerpz/mod-dwarf-controller.git
 	branch = devel
 	shallow = true
-[submodule "deps/mod-host"]
-	path = deps/mod-host
-	url = https://github.com/sejerpz/mod-host.git
-	branch = devel
-	shallow = true
 [submodule "deps/mod-system-control"]
 	path = deps/mod-system-control
 	url = https://github.com/sejerpz/mod-system-control.git
 	branch = devel
-	shallow = true
-[submodule "deps/mod-desktop"]
-	path = deps/mod-desktop
-	url = https://github.com/sejerpz/mod-desktop.git
-	branch = feature/mod-hw-emulator
 	shallow = true
 [submodule "deps/mod-duo-controller"]
 	path = deps/mod-duo-controller

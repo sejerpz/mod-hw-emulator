@@ -1,0 +1,51 @@
+# Builds the emulator, its user interface and the firmware of each device on Linux, and starts each firmware
+# headless: a picture of each display after boot is kept with the run. The packages with MOD Desktop are built by
+# sejerpz/mod-desktop (branch devel, .github/workflows/alabs.yml), which has this repository as a submodule.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up git
+        run: |
+          # the Dwarf firmware pins its protocol submodule by its SSH URL
+          git config --global url."https://github.com/".insteadOf git@github.com:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: recursive
+      - name: Sources
+        run: git submodule status --recursive
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -yqq --no-install-recommends build-essential pkg-config qtbase5-dev
+      - name: Build
+        run: |
+          make -j$(nproc) all gui
+          for d in dwarf duox duo; do
+              make -j$(nproc) DEVICE=$d firmware
+          done
+          ls -la build
+      - name: Try each firmware
+        timeout-minutes: 5
+        run: |
+          for d in dwarf duox duo; do
+              MHE_NO_SYS_HOST=1 build/mhe-run --state $RUNNER_TEMP/state-$d build/fw-$d.so \
+                  "wait 4000" "snap try-$d.png" quit > try-$d.log 2>&1 || { tail -40 try-$d.log; exit 1; }
+              tail -5 try-$d.log
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: try
+          path: |
+            try-*.png
+            try-*.log
