@@ -11,12 +11,12 @@
 [submodule "deps/mod-host"]
 	path = deps/mod-host
 	url = https://github.com/sejerpz/mod-host.git
-	branch = feature/mod-hw-emulator
+	branch = devel
 	shallow = true
 [submodule "deps/mod-system-control"]
 	path = deps/mod-system-control
 	url = https://github.com/sejerpz/mod-system-control.git
-	branch = feature/hmi-widgets
+	branch = devel
 	shallow = true
 [submodule "deps/mod-desktop"]
 	path = deps/mod-desktop
