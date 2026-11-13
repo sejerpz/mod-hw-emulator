@@ -6,7 +6,7 @@
 [submodule "deps/mod-dwarf-controller"]
 	path = deps/mod-dwarf-controller
 	url = https://github.com/sejerpz/mod-dwarf-controller.git
-	branch = feature/mod-hw-emulator
+	branch = devel
 	shallow = true
 [submodule "deps/mod-host"]
 	path = deps/mod-host
