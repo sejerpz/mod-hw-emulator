@@ -7,7 +7,8 @@
 # widget areas) are merged over it in alphabetical order, as mod-ui does with /etc/mod-hardware-descriptor.d:
 # top-level keys replace, actuators merge by uri. The packages give mod-ui MOD Desktop's descriptor, which has no
 # drop-in folder, so they need them in it. With DESKTOP_DESCRIPTOR, what tells MOD Desktop apart (name,
-# architecture, bin-compat) is taken from it.
+# architecture, bin-compat) is taken from it, and so is the audio hardware (has_noisegate,
+# swapped_audio_channels): the computer's, not the device's.
 
 import json
 import os
@@ -48,6 +49,9 @@ def main(device_path, out_path, desktop_path=None):
         for key in ('name', 'architecture', 'bin-compat'):
             if key in desktop:
                 desc[key] = desktop[key]
+        # the audio is the computer's: no noise gate in mod-host (mod-host:out1/out2), no swapped channels
+        for key in ('has_noisegate', 'swapped_audio_channels'):
+            desc[key] = desktop.get(key, False)
 
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(desc, f, indent=2, ensure_ascii=False)
