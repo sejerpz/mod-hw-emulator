@@ -18,8 +18,8 @@ Rectangles:
 - `Endless Knob 1`, `Endless Knob 2` (left, right): the collar of radius R, the cap is 0.557 R as the encoder
   widget draws it;
 - `Snapshot 1`, `Page`, `Snapshot 2` (the three buttons between the endless knobs, as the MOD manual names them);
-- `Knob 1..8`, the potentiometers, numbered as on the panel: four under each display, `1 2 5 6` on the top
-  row and `3 4 7 8` below;
+- `Knob 1..8`, the potentiometers: four under each display, numbered by columns as the firmware draws them on
+  it, `1 3 5 7` on the top row and `2 4 6 8` below;
 - `Button 1..4`, the buttons under the knobs;
 - `LED <button>` for each of the seven buttons (a dot above it), and `LED Output 1/2`, `LED Input 1/2`.
 

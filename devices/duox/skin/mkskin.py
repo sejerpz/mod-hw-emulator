@@ -162,10 +162,11 @@ def rects(k):
         x, z = bp(X, TOP_Y)
         r[name] = rect(x, z, TBTN, TBTN, k)
         r[f'LED {name}'] = rect(x, z - TBTN/2 - 2.4, 2.4, 2.4, k)
-    # numbered as on the panel, four under each display: 1 2 5 6 on top, 3 4 7 8 below
+    # four under each display, by columns as the firmware draws them on it (screen_pot): 1 3 5 7 on top,
+    # 2 4 6 8 below
     for row, Y in enumerate(POT_ROWS):
         for col, X in enumerate(POTS_X):
-            n = (col // 2) * 4 + row * 2 + col % 2 + 1
+            n = col * 2 + row + 1
             r[f'Knob {n}'] = rect(*bp(X, Y), 2*POT_R, 2*POT_R, k)
     for i, X in enumerate(POTS_X):
         x, z = bp(X, BUTTON_Y)
