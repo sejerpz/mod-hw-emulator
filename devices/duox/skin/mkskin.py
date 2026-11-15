@@ -162,11 +162,11 @@ def rects(k):
         x, z = bp(X, TOP_Y)
         r[name] = rect(x, z, TBTN, TBTN, k)
         r[f'LED {name}'] = rect(x, z - TBTN/2 - 2.4, 2.4, 2.4, k)
-    n = 1
-    for Y in POT_ROWS:
-        for X in POTS_X:
+    # numbered as on the panel, four under each display: 1 2 5 6 on top, 3 4 7 8 below
+    for row, Y in enumerate(POT_ROWS):
+        for col, X in enumerate(POTS_X):
+            n = (col // 2) * 4 + row * 2 + col % 2 + 1
             r[f'Knob {n}'] = rect(*bp(X, Y), 2*POT_R, 2*POT_R, k)
-            n += 1
     for i, X in enumerate(POTS_X):
         x, z = bp(X, BUTTON_Y)
         r[f'Button {i+1}'] = rect(x, z, BTN, BTN, k)
