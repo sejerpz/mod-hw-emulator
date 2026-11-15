@@ -54,7 +54,9 @@ def main(device_path, out_path, desktop_path=None):
             desc[key] = desktop.get(key, False)
 
     with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(desc, f, indent=2, ensure_ascii=False)
+        # ASCII only: mod-ui reads it in the locale's encoding, not UTF-8 everywhere (Windows, a C locale), and
+        # takes a descriptor it cannot read for an empty one
+        json.dump(desc, f, indent=2)
         f.write('\n')
 
 
