@@ -60,4 +60,5 @@ uint8_t _pvHeapEnd[16];
 uint8_t _vStackTop[16];
 uint8_t __top_SRAM[16];
 uint8_t __top_SRAM0[16];
+uint8_t _pvHeap2Start[16];
 uint32_t __stack_size;
